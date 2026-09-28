@@ -1,0 +1,22 @@
+[project]
+name = "rtc-infoworks-icm-mcp"
+version = "0.1.0"
+description = "MCP server for building InfoWorks ICM Real Time Control files"
+readme = "README.md"
+authors = [
+    { name = "Andres Gonzalez Iniguez", email = "a.gonzalez.iniguez@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "rtc-infoworks-icm",
+]
+
+[project.scripts]
+rtc-infoworks-icm-mcp = "rtc_infoworks_icm_mcp.server:main"
+
+[build-system]
+requires = ["uv_build>=0.11.3,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+rtc-infoworks-icm = { workspace = true }

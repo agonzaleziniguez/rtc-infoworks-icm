@@ -1,0 +1,108 @@
+# Project references
+/tmp-ref/
+
+# Byte-compiled files and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Native extensions
+*.so
+*.dylib
+*.dll
+
+# Distribution and packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Test, coverage, and quality-tool output
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+.basedpyright/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+*.py.cover
+.hypothesis/
+.tox/
+.nox/
+
+# Type-checker generated files
+cython_debug/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Documentation builds
+docs/_build/
+site/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Operating systems
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+
