@@ -66,7 +66,7 @@ class Variable:
                     f"variable argument {position} cannot be a boolean"
                 )
             if isinstance(argument, (int, float)):
-                if not math.isfinite(argument):
+                if isinstance(argument, float) and not math.isfinite(argument):
                     raise RTCValidationError(
                         f"variable argument {position} must be finite"
                     )
