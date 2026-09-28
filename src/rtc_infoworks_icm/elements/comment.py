@@ -1,4 +1,4 @@
-"""Typed RTC elements."""
+"""RTC comment model."""
 
 from dataclasses import dataclass
 
