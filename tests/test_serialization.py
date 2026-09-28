@@ -1,4 +1,9 @@
-from rtc_infoworks_icm._serialization import serialize_header, serialize_terminator
+from rtc_infoworks_icm import Comment
+from rtc_infoworks_icm._serialization import (
+    serialize_comment,
+    serialize_header,
+    serialize_terminator,
+)
 
 
 def test_serialize_header() -> None:
@@ -9,3 +14,7 @@ def test_serialize_header() -> None:
 
 def test_serialize_terminator() -> None:
     assert serialize_terminator() == "TERMINATOR\n"
+
+
+def test_serialize_comment() -> None:
+    assert serialize_comment(Comment("Generated")) == "   COMMENT Generated\n"
