@@ -4,7 +4,8 @@ from rtc_infoworks_icm._serialization.fields import (
     serialize_number_field,
     serialize_text_field,
 )
-from rtc_infoworks_icm.elements.variable import Reference, Variable, VariableArgument
+from rtc_infoworks_icm.elements.variable import Variable, VariableArgument
+from rtc_infoworks_icm.reference import Reference
 
 
 def serialize_variable(variable: Variable) -> str:

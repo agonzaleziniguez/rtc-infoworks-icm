@@ -6,6 +6,7 @@ from enum import StrEnum
 
 from rtc_infoworks_icm._validation import validate_identifier
 from rtc_infoworks_icm.exceptions import RTCValidationError
+from rtc_infoworks_icm.reference import Reference
 
 _MAX_MEASUREMENT_LENGTH = 7
 
@@ -20,16 +21,6 @@ class VariableOperator(StrEnum):
     MULTIPLY = "*"
     IF = "IF"
     TIMER = "TIMER"
-
-
-@dataclass(frozen=True, slots=True)
-class Reference:
-    """The name of another RTC element used as an input."""
-
-    name: str
-
-    def __post_init__(self) -> None:
-        validate_identifier(self.name, field="reference name")
 
 
 type VariableArgument = int | float | Reference

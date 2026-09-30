@@ -3,8 +3,10 @@
 from datetime import datetime, time
 
 from rtc_infoworks_icm._serialization.fields import (
+    serialize_datetime_field,
     serialize_number_field,
     serialize_text_field,
+    serialize_time_field,
 )
 from rtc_infoworks_icm.elements.range import Range
 
@@ -37,7 +39,7 @@ def _serialize_location(location: str | None) -> str:
 
 def _serialize_bound(value: int | float | datetime | time | None) -> str:
     if isinstance(value, datetime):
-        return value.strftime("%d%m%Y%H%M%S")
+        return serialize_datetime_field(value)
     if isinstance(value, time):
-        return f"00000000{value:%H%M%S}"
+        return serialize_time_field(value)
     return serialize_number_field(value, width=14, precision=4)
