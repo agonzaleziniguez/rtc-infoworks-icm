@@ -1,11 +1,10 @@
 """RTC range model."""
 
-import math
 from dataclasses import dataclass
 from datetime import datetime, time
 from enum import StrEnum
 
-from rtc_infoworks_icm._validation import validate_identifier
+from rtc_infoworks_icm._validation import validate_finite_number, validate_identifier
 from rtc_infoworks_icm.exceptions import RTCValidationError
 
 _MIN_WEEKDAY = 1
@@ -120,12 +119,9 @@ class Range:
             self._validate_numeric_range()
 
     def _validate_distance(self) -> None:
-        if isinstance(self.distance, bool) or (
-            isinstance(self.distance, float) and not math.isfinite(self.distance)
-        ):
-            raise RTCValidationError("range distance must be a finite number")
-        if len(f"{self.distance:.1f}") > 7:
-            raise RTCValidationError("range distance does not fit the RTC field")
+        validate_finite_number(
+            self.distance, field="range distance", width=7, precision=1
+        )
 
     def _validate_time_range(self) -> None:
         if self.location is not None:
@@ -207,12 +203,9 @@ class Range:
             return None
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise RTCValidationError(f"numeric range {field} must be a number")
-        if isinstance(value, float) and not math.isfinite(value):
-            raise RTCValidationError(f"numeric range {field} must be finite")
-        if len(f"{value:.4f}") > 14:
-            raise RTCValidationError(
-                f"numeric range {field} does not fit the RTC field"
-            )
+        validate_finite_number(
+            value, field=f"numeric range {field}", width=14, precision=4
+        )
         return value
 
 

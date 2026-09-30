@@ -1,11 +1,10 @@
 """RTC table model."""
 
-import math
 from dataclasses import dataclass
 from datetime import datetime, time
 from enum import StrEnum
 
-from rtc_infoworks_icm._validation import validate_identifier
+from rtc_infoworks_icm._validation import validate_finite_number, validate_identifier
 from rtc_infoworks_icm.elements.range import RangeBound, WeeklyTime, compute_repeat_order_key
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
@@ -69,20 +68,11 @@ def _validate_x(value: RangeBound) -> None:
         if value.utcoffset() is not None:
             raise RTCValidationError("table input must not include a timezone")
         return
-    _validate_number(value, field="input")
+    validate_finite_number(value, field="table input", width=14, precision=3)
 
 
 def _validate_y(value: int | float) -> None:
-    _validate_number(value, field="output")
-
-
-def _validate_number(value: int | float, *, field: str) -> None:
-    if isinstance(value, bool):
-        raise RTCValidationError(f"table {field} must be a number")
-    if isinstance(value, float) and not math.isfinite(value):
-        raise RTCValidationError(f"table {field} must be finite")
-    if len(f"{value:.3f}") > 14:
-        raise RTCValidationError(f"table {field} does not fit the RTC field")
+    validate_finite_number(value, field="table output", width=14, precision=3)
 
 
 def _classify(value: RangeBound) -> str:

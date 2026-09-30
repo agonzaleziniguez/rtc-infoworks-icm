@@ -1,9 +1,9 @@
 """RTC rule model."""
 
-import math
 from dataclasses import dataclass
 from enum import StrEnum
 
+from rtc_infoworks_icm._validation import validate_finite_number
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 
@@ -42,13 +42,12 @@ class Rule:
 
     def _validate_fixed_value(self) -> None:
         value = self.fixed_value
-        if isinstance(value, bool):
-            raise RTCValidationError("rule fixed value must be a number")
-        if isinstance(value, float) and not math.isfinite(value):
-            raise RTCValidationError("rule fixed value must be finite")
         precision = (
             _ZERO_FIXED_VALUE_PRECISION if value == 0.0 else _FIXED_VALUE_PRECISION
         )
-        formatted = f"{value:.{precision}f}"
-        if len(formatted) > _FIXED_VALUE_WIDTH:
-            raise RTCValidationError("rule fixed value does not fit the RTC field")
+        validate_finite_number(
+            value,
+            field="rule fixed value",
+            width=_FIXED_VALUE_WIDTH,
+            precision=precision,
+        )

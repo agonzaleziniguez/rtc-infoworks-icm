@@ -1,10 +1,9 @@
 """RTC variable model."""
 
-import math
 from dataclasses import dataclass
 from enum import StrEnum
 
-from rtc_infoworks_icm._validation import validate_identifier
+from rtc_infoworks_icm._validation import validate_finite_number, validate_identifier
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 
@@ -52,19 +51,13 @@ class Variable:
 
         arguments = (self.argument_1, self.argument_2, self.argument_3)
         for position, argument in enumerate(arguments, start=1):
-            if isinstance(argument, bool):
-                raise RTCValidationError(
-                    f"variable argument {position} cannot be a boolean"
-                )
             if isinstance(argument, (int, float)):
-                if isinstance(argument, float) and not math.isfinite(argument):
-                    raise RTCValidationError(
-                        f"variable argument {position} must be finite"
-                    )
-                if len(f"{argument:.5f}") > 14:
-                    raise RTCValidationError(
-                        f"variable argument {position} does not fit the RTC field"
-                    )
+                validate_finite_number(
+                    argument,
+                    field=f"variable argument {position}",
+                    width=14,
+                    precision=5,
+                )
 
         if self.operator is VariableOperator.ASSIGN:
             self._require_empty_arguments(2, 3)
