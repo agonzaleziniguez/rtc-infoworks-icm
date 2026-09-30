@@ -2,6 +2,8 @@
 
 from datetime import datetime, time
 
+from rtc_infoworks_icm.reference import Reference
+
 
 def serialize_text_field(value: str | None, *, width: int) -> str:
     """Serialize validated text as a right-aligned field."""
@@ -16,6 +18,11 @@ def serialize_number_field(
 ) -> str:
     """Serialize a validated number as a right-aligned field."""
     return " " * width if value is None else f"{value:.{precision}f}".rjust(width)
+
+
+def serialize_reference_field(value: Reference | None, *, width: int) -> str:
+    """Serialize an optional reference as a right-aligned name field."""
+    return serialize_text_field(value.name if value is not None else None, width=width)
 
 
 def serialize_datetime_field(value: datetime) -> str:
