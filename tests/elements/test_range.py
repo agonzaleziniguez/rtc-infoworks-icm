@@ -2,7 +2,7 @@ from datetime import UTC, datetime, time
 
 import pytest
 
-from rtc_infoworks_icm import Range, RangeType, RTCValidationError
+from rtc_infoworks_icm import Range, RangeType, RTCValidationError, WeeklyTime
 
 
 def test_numeric_range_preserves_values() -> None:
@@ -101,3 +101,35 @@ def test_time_range_rejects_timezone() -> None:
 
 def test_range_types_fit_rtc_field() -> None:
     assert all(len(type_.value) <= 5 for type_ in RangeType)
+
+
+def test_repeating_time_range_accepts_weekly_time_bounds() -> None:
+    range_ = Range(
+        "weekly",
+        RangeType.TIME_REPEAT,
+        minimum=WeeklyTime(1, time(6)),
+        maximum=WeeklyTime(2, time(6)),
+    )
+
+    assert range_.maximum == WeeklyTime(2, time(6))
+
+
+def test_repeating_time_range_rejects_reversed_weekly_bounds() -> None:
+    with pytest.raises(RTCValidationError, match="minimum cannot exceed maximum"):
+        Range(
+            "weekly",
+            RangeType.TIME_REPEAT,
+            minimum=WeeklyTime(2, time(6)),
+            maximum=WeeklyTime(1, time(6)),
+        )
+
+
+@pytest.mark.parametrize("weekday", [0, 8])
+def test_weekly_time_rejects_invalid_weekday(weekday: int) -> None:
+    with pytest.raises(RTCValidationError, match="weekday must be between 1 and 7"):
+        WeeklyTime(weekday, time(6))
+
+
+def test_weekly_time_rejects_timezone() -> None:
+    with pytest.raises(RTCValidationError, match="must not include a timezone"):
+        WeeklyTime(1, time(6, tzinfo=UTC))

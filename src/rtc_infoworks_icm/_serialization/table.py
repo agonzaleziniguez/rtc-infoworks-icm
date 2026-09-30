@@ -8,6 +8,7 @@ from rtc_infoworks_icm._serialization.fields import (
     serialize_text_field,
     serialize_time_field,
 )
+from rtc_infoworks_icm.elements.range import WeeklyTime
 from rtc_infoworks_icm.elements.table import Table, TableRow
 
 
@@ -38,9 +39,9 @@ def _serialize_row(row: TableRow) -> str:
     return " ".join(fields)
 
 
-def _serialize_x(value: int | float | datetime | time) -> str:
+def _serialize_x(value: int | float | datetime | time | WeeklyTime) -> str:
     if isinstance(value, datetime):
         return serialize_datetime_field(value)
-    if isinstance(value, time):
+    if isinstance(value, (time, WeeklyTime)):
         return serialize_time_field(value)
     return serialize_number_field(value, width=14, precision=3)

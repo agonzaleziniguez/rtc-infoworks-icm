@@ -2,7 +2,7 @@
 
 from rtc_infoworks_icm.elements.comment import Comment
 from rtc_infoworks_icm.elements.logic import Logic, LogicOperator
-from rtc_infoworks_icm.elements.range import Range, RangeBound, RangeType
+from rtc_infoworks_icm.elements.range import Range, RangeBound, RangeType, WeeklyTime
 from rtc_infoworks_icm.elements.rule import Rule, RuleType
 from rtc_infoworks_icm.elements.table import Table, TableRow, TableType
 from rtc_infoworks_icm.elements.variable import (
@@ -26,4 +26,5 @@ __all__ = [
     "Variable",
     "VariableArgument",
     "VariableOperator",
+    "WeeklyTime",
 ]

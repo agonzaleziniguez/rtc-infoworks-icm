@@ -1,6 +1,6 @@
 from datetime import datetime, time
 
-from rtc_infoworks_icm import Range, RangeType
+from rtc_infoworks_icm import Range, RangeType, WeeklyTime
 from rtc_infoworks_icm._serialization import serialize_range
 
 
@@ -43,4 +43,17 @@ def test_serialize_repeating_time_range() -> None:
 
     assert serialize_range(range_) == (
         "     RANGE      daily    TR                0.0 00000000063000 00000000180000\n"
+    )
+
+
+def test_serialize_weekly_repeating_time_range() -> None:
+    range_ = Range(
+        "weekly",
+        RangeType.TIME_REPEAT,
+        minimum=WeeklyTime(1, time(6, 30)),
+        maximum=WeeklyTime(2, time(18)),
+    )
+
+    assert serialize_range(range_) == (
+        "     RANGE     weekly    TR                0.0 01000000063000 02000000180000\n"
     )

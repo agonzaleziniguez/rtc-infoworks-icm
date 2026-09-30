@@ -2,7 +2,14 @@ from datetime import UTC, datetime, time
 
 import pytest
 
-from rtc_infoworks_icm import Reference, RTCValidationError, Table, TableRow, TableType
+from rtc_infoworks_icm import (
+    Reference,
+    RTCValidationError,
+    Table,
+    TableRow,
+    TableType,
+    WeeklyTime,
+)
 
 
 def test_table_preserves_numeric_rows() -> None:
@@ -103,3 +110,27 @@ def test_table_accepts_ascending_datetime_rows() -> None:
     )
 
     assert table.rows[0].x == datetime(2026, 1, 1)
+
+
+def test_table_accepts_ascending_weekly_time_rows() -> None:
+    table = Table(
+        "gate",
+        Reference("weekly"),
+        TableType.STEP,
+        (
+            TableRow(WeeklyTime(1, time(6)), 0.0),
+            TableRow(WeeklyTime(2, time(6)), 1.0),
+        ),
+    )
+
+    assert table.rows[1].x == WeeklyTime(2, time(6))
+
+
+def test_table_rejects_mixed_time_and_weekly_time_rows() -> None:
+    with pytest.raises(RTCValidationError, match="single input type"):
+        Table(
+            "gate",
+            Reference("weekly"),
+            TableType.STEP,
+            (TableRow(time(6), 0.0), TableRow(WeeklyTime(1, time(6)), 1.0)),
+        )

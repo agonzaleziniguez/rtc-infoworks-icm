@@ -2,6 +2,7 @@
 
 from datetime import datetime, time
 
+from rtc_infoworks_icm.elements.range import WeeklyTime
 from rtc_infoworks_icm.reference import Reference
 
 
@@ -30,6 +31,13 @@ def serialize_datetime_field(value: datetime) -> str:
     return value.strftime("%d%m%Y%H%M%S")
 
 
-def serialize_time_field(value: time) -> str:
-    """Serialize a time-of-day value as a 14-character RTC date field."""
+def serialize_time_field(value: time | WeeklyTime) -> str:
+    """Serialize a repeat-time value as a 14-character RTC date field.
+
+    A plain time of day leaves the day/month/year digits as zero (the
+    "daily" RTC convention). A `WeeklyTime` encodes its weekday (1-7) in
+    the day digits and leaves month/year as zero (the "weekly" convention).
+    """
+    if isinstance(value, WeeklyTime):
+        return f"{value.weekday:02d}000000{value.time:%H%M%S}"
     return f"00000000{value:%H%M%S}"

@@ -8,7 +8,31 @@ from enum import StrEnum
 from rtc_infoworks_icm._validation import validate_identifier
 from rtc_infoworks_icm.exceptions import RTCValidationError
 
-type RangeBound = int | float | datetime | time
+_MIN_WEEKDAY = 1
+_MAX_WEEKDAY = 7
+
+
+@dataclass(frozen=True, slots=True)
+class WeeklyTime:
+    """A time of day paired with a day of the week.
+
+    Used for weekly-repeat time ranges/tables, where the RTC format encodes
+    the weekday (1=Monday ... 7=Sunday) alongside the time of day.
+    """
+
+    weekday: int
+    time: time
+
+    def __post_init__(self) -> None:
+        if not _MIN_WEEKDAY <= self.weekday <= _MAX_WEEKDAY:
+            raise RTCValidationError(
+                f"weekly time weekday must be between {_MIN_WEEKDAY} and {_MAX_WEEKDAY}"
+            )
+        if self.time.utcoffset() is not None:
+            raise RTCValidationError("weekly time must not include a timezone")
+
+
+type RangeBound = int | float | datetime | time | WeeklyTime
 
 
 class RangeType(StrEnum):
@@ -115,9 +139,14 @@ class Range:
             if minimum is not None and maximum is not None and minimum > maximum:
                 raise RTCValidationError("range minimum cannot exceed maximum")
         else:
-            minimum = self._validate_time_bound(self.minimum, field="minimum")
-            maximum = self._validate_time_bound(self.maximum, field="maximum")
-            if minimum is not None and maximum is not None and minimum > maximum:
+            minimum = self._validate_repeat_bound(self.minimum, field="minimum")
+            maximum = self._validate_repeat_bound(self.maximum, field="maximum")
+            if (
+                minimum is not None
+                and maximum is not None
+                and compute_repeat_order_key(minimum)
+                > compute_repeat_order_key(maximum)
+            ):
                 raise RTCValidationError("range minimum cannot exceed maximum")
 
     def _validate_datetime_bound(
@@ -134,16 +163,20 @@ class Range:
             raise RTCValidationError(f"time range {field} must not include a timezone")
         return value
 
-    def _validate_time_bound(
+    def _validate_repeat_bound(
         self,
         value: RangeBound | None,
         *,
         field: str,
-    ) -> time | None:
+    ) -> time | WeeklyTime | None:
         if value is None:
             return None
+        if isinstance(value, WeeklyTime):
+            return value
         if not isinstance(value, time):
-            raise RTCValidationError(f"time range {field} must be a time value")
+            raise RTCValidationError(
+                f"time range {field} must be a time or weekly time value"
+            )
         if value.utcoffset() is not None:
             raise RTCValidationError(f"time range {field} must not include a timezone")
         return value
@@ -181,3 +214,22 @@ class Range:
                 f"numeric range {field} does not fit the RTC field"
             )
         return value
+
+
+def compute_repeat_order_key(value: time | WeeklyTime) -> float:
+    """Compute a comparable key for a repeat-time bound (daily or weekly)."""
+    weekday, time_of_day = (
+        (0, value)
+        if isinstance(value, time)
+        else (
+            value.weekday,
+            value.time,
+        )
+    )
+    seconds = (
+        (time_of_day.hour * 3600)
+        + (time_of_day.minute * 60)
+        + time_of_day.second
+        + (time_of_day.microsecond / 1_000_000)
+    )
+    return (weekday * 86400) + seconds

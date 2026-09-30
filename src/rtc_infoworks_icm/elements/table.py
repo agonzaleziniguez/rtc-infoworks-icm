@@ -6,7 +6,7 @@ from datetime import datetime, time
 from enum import StrEnum
 
 from rtc_infoworks_icm._validation import validate_identifier
-from rtc_infoworks_icm.elements.range import RangeBound
+from rtc_infoworks_icm.elements.range import RangeBound, WeeklyTime, compute_repeat_order_key
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 
@@ -63,6 +63,8 @@ class Table:
 
 
 def _validate_x(value: RangeBound) -> None:
+    if isinstance(value, WeeklyTime):
+        return
     if isinstance(value, (datetime, time)):
         if value.utcoffset() is not None:
             raise RTCValidationError("table input must not include a timezone")
@@ -86,6 +88,8 @@ def _validate_number(value: int | float, *, field: str) -> None:
 def _classify(value: RangeBound) -> str:
     if isinstance(value, datetime):
         return "datetime"
+    if isinstance(value, WeeklyTime):
+        return "weekly_time"
     if isinstance(value, time):
         return "time"
     return "number"
@@ -94,9 +98,8 @@ def _classify(value: RangeBound) -> str:
 def _compute_ordering_key(value: RangeBound) -> float:
     if isinstance(value, datetime):
         return value.timestamp()
-    if isinstance(value, time):
-        seconds = (value.hour * 3600) + (value.minute * 60) + value.second
-        return seconds + (value.microsecond / 1_000_000)
+    if isinstance(value, (time, WeeklyTime)):
+        return compute_repeat_order_key(value)
     return float(value)
 
 

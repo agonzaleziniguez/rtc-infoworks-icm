@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, time
 
-from rtc_infoworks_icm import Reference, Table, TableRow, TableType
+from rtc_infoworks_icm import Reference, Table, TableRow, TableType, WeeklyTime
 from rtc_infoworks_icm._serialization import serialize_table
 
 
@@ -35,4 +35,22 @@ def test_serialize_datetime_table() -> None:
         "     TABLE      clock       time           STEP\n"
         "TABLEENTRY                       01012026063000          0.200\n"
         "TABLEENTRY                       02012026120000          0.800\n"
+    )
+
+
+def test_serialize_weekly_time_table() -> None:
+    table = Table(
+        "weekly",
+        Reference("wk"),
+        TableType.STEP,
+        (
+            TableRow(WeeklyTime(1, time(6)), 0.2),
+            TableRow(WeeklyTime(2, time(6)), 0.8),
+        ),
+    )
+
+    assert serialize_table(table) == (
+        "     TABLE     weekly         wk           STEP\n"
+        "TABLEENTRY                       01000000060000          0.200\n"
+        "TABLEENTRY                       02000000060000          0.800\n"
     )

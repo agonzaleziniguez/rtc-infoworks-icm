@@ -1,4 +1,4 @@
-"""Serialization of RTC elements."""
+"""Internal RTC serialization."""
 
 from rtc_infoworks_icm._serialization.comment import serialize_comment
 from rtc_infoworks_icm._serialization.document import serialize_header, serialize_terminator

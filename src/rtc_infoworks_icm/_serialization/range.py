@@ -8,7 +8,7 @@ from rtc_infoworks_icm._serialization.fields import (
     serialize_text_field,
     serialize_time_field,
 )
-from rtc_infoworks_icm.elements.range import Range
+from rtc_infoworks_icm.elements.range import Range, WeeklyTime
 
 
 def serialize_range(range_: Range) -> str:
@@ -37,9 +37,9 @@ def _serialize_location(location: str | None) -> str:
     return f'"{location}"'
 
 
-def _serialize_bound(value: int | float | datetime | time | None) -> str:
+def _serialize_bound(value: int | float | datetime | time | WeeklyTime | None) -> str:
     if isinstance(value, datetime):
         return serialize_datetime_field(value)
-    if isinstance(value, time):
+    if isinstance(value, (time, WeeklyTime)):
         return serialize_time_field(value)
     return serialize_number_field(value, width=14, precision=4)

@@ -14,6 +14,7 @@ from rtc_infoworks_icm.elements import (
     TableType,
     Variable,
     VariableOperator,
+    WeeklyTime,
 )
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
@@ -34,4 +35,5 @@ __all__ = [
     "TableType",
     "Variable",
     "VariableOperator",
+    "WeeklyTime",
 ]
