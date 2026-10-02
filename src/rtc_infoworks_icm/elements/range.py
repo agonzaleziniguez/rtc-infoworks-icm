@@ -4,7 +4,11 @@ from dataclasses import dataclass
 from datetime import datetime, time
 from enum import StrEnum
 
-from rtc_infoworks_icm._validation import validate_finite_number, validate_identifier
+from rtc_infoworks_icm._validation import (
+    validate_finite_number,
+    validate_formatted_number_width,
+    validate_identifier,
+)
 from rtc_infoworks_icm.exceptions import RTCValidationError
 
 _MIN_WEEKDAY = 1
@@ -119,7 +123,8 @@ class Range:
             self._validate_numeric_range()
 
     def _validate_distance(self) -> None:
-        validate_finite_number(
+        validate_finite_number(self.distance, field="range distance")
+        validate_formatted_number_width(
             self.distance, field="range distance", width=7, precision=1
         )
 
@@ -203,7 +208,8 @@ class Range:
             return None
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise RTCValidationError(f"numeric range {field} must be a number")
-        validate_finite_number(
+        validate_finite_number(value, field=f"numeric range {field}")
+        validate_formatted_number_width(
             value, field=f"numeric range {field}", width=14, precision=4
         )
         return value

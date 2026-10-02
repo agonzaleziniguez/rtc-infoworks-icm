@@ -4,7 +4,11 @@ from dataclasses import dataclass
 from datetime import datetime, time
 from enum import StrEnum
 
-from rtc_infoworks_icm._validation import validate_finite_number, validate_identifier
+from rtc_infoworks_icm._validation import (
+    validate_finite_number,
+    validate_formatted_number_width,
+    validate_identifier,
+)
 from rtc_infoworks_icm.elements.range import RangeBound, WeeklyTime, compute_repeat_order_key
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
@@ -68,11 +72,13 @@ def _validate_x(value: RangeBound) -> None:
         if value.utcoffset() is not None:
             raise RTCValidationError("table input must not include a timezone")
         return
-    validate_finite_number(value, field="table input", width=14, precision=3)
+    validate_finite_number(value, field="table input")
+    validate_formatted_number_width(value, field="table input", width=14, precision=3)
 
 
 def _validate_y(value: int | float) -> None:
-    validate_finite_number(value, field="table output", width=14, precision=3)
+    validate_finite_number(value, field="table output")
+    validate_formatted_number_width(value, field="table output", width=14, precision=3)
 
 
 def _classify(value: RangeBound) -> str:

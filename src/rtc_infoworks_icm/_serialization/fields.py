@@ -11,6 +11,13 @@ def serialize_text_field(value: str | None, *, width: int) -> str:
     return (" " * width) if value is None else value.rjust(width)
 
 
+def serialize_location_field(value: str | None) -> str:
+    """Serialize a network object ID, quoting IDs over ten UTF-8 bytes."""
+    if value is None or len(value.encode("utf-8")) <= 10:
+        return serialize_text_field(value, width=10)
+    return f'"{value}"'
+
+
 def serialize_number_field(
     value: int | float | None,
     *,

@@ -20,6 +20,14 @@ def test_serialize_numeric_range() -> None:
     )
 
 
+def test_serialize_range_quotes_location_over_ten_utf8_bytes() -> None:
+    range_ = Range("level", RangeType.LEVEL, location="\u00e9" * 6)
+
+    assert serialize_range(range_).startswith(
+        '     RANGE      level     Z "' + "\u00e9" * 6 + '" '
+    )
+
+
 def test_serialize_calendar_time_range() -> None:
     range_ = Range(
         "event",

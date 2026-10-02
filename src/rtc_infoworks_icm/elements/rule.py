@@ -3,7 +3,10 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
-from rtc_infoworks_icm._validation import validate_finite_number
+from rtc_infoworks_icm._validation import (
+    validate_finite_number,
+    validate_formatted_number_width,
+)
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 
@@ -45,7 +48,8 @@ class Rule:
         precision = (
             _ZERO_FIXED_VALUE_PRECISION if value == 0.0 else _FIXED_VALUE_PRECISION
         )
-        validate_finite_number(
+        validate_finite_number(value, field="rule fixed value")
+        validate_formatted_number_width(
             value,
             field="rule fixed value",
             width=_FIXED_VALUE_WIDTH,

@@ -23,7 +23,7 @@ def validate_identifier(value: str, *, field: str) -> None:
         )
 
 
-def validate_finite(value: int | float, *, field: str) -> None:
+def validate_finite_number(value: int | float, *, field: str) -> None:
     """Validate a value is a non-bool finite number."""
     if isinstance(value, bool):
         raise RTCValidationError(f"{field} must be a number")
@@ -31,14 +31,13 @@ def validate_finite(value: int | float, *, field: str) -> None:
         raise RTCValidationError(f"{field} must be finite")
 
 
-def validate_finite_number(
+def validate_formatted_number_width(
     value: int | float,
     *,
     field: str,
     width: int,
     precision: int,
 ) -> None:
-    """Validate a value is a non-bool finite number that fits an RTC field."""
-    validate_finite(value, field=field)
+    """Check formatted width after numeric validity has been validated."""
     if len(f"{value:.{precision}f}") > width:
         raise RTCValidationError(f"{field} does not fit the RTC field")

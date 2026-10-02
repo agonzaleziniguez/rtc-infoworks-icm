@@ -3,7 +3,11 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
-from rtc_infoworks_icm._validation import validate_finite_number, validate_identifier
+from rtc_infoworks_icm._validation import (
+    validate_finite_number,
+    validate_formatted_number_width,
+    validate_identifier,
+)
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 
@@ -52,7 +56,8 @@ class Variable:
         arguments = (self.argument_1, self.argument_2, self.argument_3)
         for position, argument in enumerate(arguments, start=1):
             if isinstance(argument, (int, float)):
-                validate_finite_number(
+                validate_finite_number(argument, field=f"variable argument {position}")
+                validate_formatted_number_width(
                     argument,
                     field=f"variable argument {position}",
                     width=14,

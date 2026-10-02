@@ -5,6 +5,7 @@ from rtc_infoworks_icm._serialization.controller import serialize_controller
 from rtc_infoworks_icm._serialization.document import serialize_header, serialize_terminator
 from rtc_infoworks_icm._serialization.logic import serialize_logic
 from rtc_infoworks_icm._serialization.range import serialize_range
+from rtc_infoworks_icm._serialization.regulator import serialize_regulator
 from rtc_infoworks_icm._serialization.rule import serialize_rule
 from rtc_infoworks_icm._serialization.table import serialize_table
 from rtc_infoworks_icm._serialization.variable import serialize_variable
@@ -15,6 +16,7 @@ __all__ = [
     "serialize_header",
     "serialize_logic",
     "serialize_range",
+    "serialize_regulator",
     "serialize_rule",
     "serialize_table",
     "serialize_terminator",

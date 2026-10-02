@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from rtc_infoworks_icm._validation import (
-    validate_finite,
+    validate_finite_number,
     validate_identifier,
     validate_integer,
 )
@@ -67,7 +67,7 @@ class Controller:
         # PID coefficient width is a minimum padding width, not a size limit.
         # Longer values are serialized in full.
         for label, value in pid_fields:
-            validate_finite(value, field=f"controller {label}")
+            validate_finite_number(value, field=f"controller {label}")
             if not is_pid and value != 0.0:
                 raise RTCValidationError(
                     f"controller {label} is only used with PID type"

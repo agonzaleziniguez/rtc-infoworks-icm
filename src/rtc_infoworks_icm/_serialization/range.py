@@ -4,6 +4,7 @@ from datetime import datetime, time
 
 from rtc_infoworks_icm._serialization.fields import (
     serialize_datetime_field,
+    serialize_location_field,
     serialize_number_field,
     serialize_text_field,
     serialize_time_field,
@@ -13,7 +14,7 @@ from rtc_infoworks_icm.elements.range import Range, WeeklyTime
 
 def serialize_range(range_: Range) -> str:
     """Serialize a validated RTC range."""
-    location = _serialize_location(range_.location)
+    location = serialize_location_field(range_.location)
     minimum = _serialize_bound(range_.minimum)
     maximum = _serialize_bound(range_.maximum)
 
@@ -27,14 +28,6 @@ def serialize_range(range_: Range) -> str:
         maximum,
     )
     return " ".join(fields) + "\n"
-
-
-def _serialize_location(location: str | None) -> str:
-    if location is None:
-        return serialize_text_field(None, width=10)
-    if len(location) <= 10:
-        return serialize_text_field(location, width=10)
-    return f'"{location}"'
 
 
 def _serialize_bound(value: int | float | datetime | time | WeeklyTime | None) -> str:
