@@ -2,6 +2,8 @@
 
 from rtc_infoworks_icm.elements import (
     Comment,
+    Controller,
+    ControllerType,
     Logic,
     LogicOperator,
     Range,
@@ -21,6 +23,8 @@ from rtc_infoworks_icm.reference import Reference
 
 __all__ = [
     "Comment",
+    "Controller",
+    "ControllerType",
     "Logic",
     "LogicOperator",
     "Range",

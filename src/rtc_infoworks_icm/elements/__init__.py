@@ -1,6 +1,7 @@
 """Typed RTC elements."""
 
 from rtc_infoworks_icm.elements.comment import Comment
+from rtc_infoworks_icm.elements.controller import Controller, ControllerType
 from rtc_infoworks_icm.elements.logic import Logic, LogicOperator
 from rtc_infoworks_icm.elements.range import Range, RangeBound, RangeType, WeeklyTime
 from rtc_infoworks_icm.elements.rule import Rule, RuleType
@@ -13,6 +14,8 @@ from rtc_infoworks_icm.elements.variable import (
 
 __all__ = [
     "Comment",
+    "Controller",
+    "ControllerType",
     "Logic",
     "LogicOperator",
     "Range",
