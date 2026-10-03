@@ -7,8 +7,8 @@ from rtc_infoworks_icm._validation import (
     validate_finite_number,
     validate_formatted_number_width,
     validate_identifier,
+    validate_nonempty_text,
     validate_option,
-    validate_text,
 )
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
@@ -46,9 +46,7 @@ class Variable:
         validate_option(self.operator, VariableOperator, field="variable operator")
         validate_identifier(self.name, field="variable name")
         if self.measurement is not None:
-            validate_text(self.measurement, field="variable measurement")
-        if self.measurement is not None and not self.measurement.strip():
-            raise RTCValidationError("variable measurement cannot be empty")
+            validate_nonempty_text(self.measurement, field="variable measurement")
         if (
             self.measurement is not None
             and len(self.measurement) > _MAX_MEASUREMENT_LENGTH

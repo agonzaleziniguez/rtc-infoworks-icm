@@ -27,11 +27,30 @@ def validate_text(value: object, *, field: str) -> str:
     return value
 
 
-def validate_identifier(value: object, *, field: str) -> None:
-    """Validate an RTC identifier shared by multiple element types."""
+def validate_nonempty_text(value: object, *, field: str) -> str:
+    """Require nonblank text without stripping or coercing the stored value."""
     value = validate_text(value, field=field)
     if not value.strip():
         raise RTCValidationError(f"{field} cannot be empty")
+    return value
+
+
+def validate_single_line_text(
+    value: object, *, field: str, error_message: str | None = None
+) -> None:
+    """Require text without carriage returns or newlines."""
+    value = validate_text(value, field=field)
+    if "\n" in value or "\r" in value:
+        raise RTCValidationError(
+            error_message
+            if error_message is not None
+            else f"{field} must be a single line"
+        )
+
+
+def validate_identifier(value: object, *, field: str) -> None:
+    """Validate an RTC identifier shared by multiple element types."""
+    value = validate_nonempty_text(value, field=field)
     if len(value) > _MAX_IDENTIFIER_LENGTH:
         raise RTCValidationError(
             f"{field} cannot exceed {_MAX_IDENTIFIER_LENGTH} characters"

@@ -9,8 +9,9 @@ from rtc_infoworks_icm._validation import (
     validate_formatted_number_width,
     validate_identifier,
     validate_integer,
+    validate_nonempty_text,
     validate_option,
-    validate_text,
+    validate_single_line_text,
 )
 from rtc_infoworks_icm.exceptions import RTCValidationError
 
@@ -196,13 +197,13 @@ class Range:
     def _validate_numeric_range(self) -> None:
         if self.location is None:
             raise RTCValidationError("numeric range location cannot be empty")
-        validate_text(self.location, field="numeric range location")
-        if not self.location.strip():
-            raise RTCValidationError("numeric range location cannot be empty")
-        if "\n" in self.location or "\r" in self.location or '"' in self.location:
-            raise RTCValidationError(
-                "numeric range location cannot contain quotes or newlines"
-            )
+        validate_nonempty_text(self.location, field="numeric range location")
+        message = "numeric range location cannot contain quotes or newlines"
+        validate_single_line_text(
+            self.location, field="numeric range location", error_message=message
+        )
+        if '"' in self.location:
+            raise RTCValidationError(message)
         if self.type is RangeType.VARIABLE:
             validate_identifier(self.location, field="reference name")
         if self.type is RangeType.VARIABLE and self.distance != 0:

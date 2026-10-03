@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from rtc_infoworks_icm._validation import validate_text
+from rtc_infoworks_icm._validation import validate_nonempty_text, validate_single_line_text
 from rtc_infoworks_icm.exceptions import RTCValidationError
 
 _MAX_COMMENT_LENGTH = 100  # TODO: Confirm the InfoWorks ICM comment length limit.
@@ -15,11 +15,8 @@ class Comment:
     text: str
 
     def __post_init__(self) -> None:
-        validate_text(self.text, field="comment text")
-        if not self.text.strip():
-            raise RTCValidationError("comment text cannot be empty")
-        if "\n" in self.text or "\r" in self.text:
-            raise RTCValidationError("comment text must be a single line")
+        validate_nonempty_text(self.text, field="comment text")
+        validate_single_line_text(self.text, field="comment text")
         if len(self.text) > _MAX_COMMENT_LENGTH:
             raise RTCValidationError(
                 f"comment text cannot exceed {_MAX_COMMENT_LENGTH} characters"

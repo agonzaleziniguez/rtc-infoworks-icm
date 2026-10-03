@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from datetime import datetime, time
 
-from rtc_infoworks_icm._validation import validate_text
+from rtc_infoworks_icm._validation import validate_nonempty_text, validate_single_line_text
 from rtc_infoworks_icm.elements.comment import Comment
 from rtc_infoworks_icm.elements.controller import Controller
 from rtc_infoworks_icm.elements.logic import Logic
@@ -82,11 +82,8 @@ def validate_document(name: str, elements: Sequence[RTCElement]) -> None:
 
 def validate_document_name(name: str) -> None:
     """Validate the document title independently of its contents."""
-    validate_text(name, field="document name")
-    if not name.strip():
-        raise RTCValidationError("document name cannot be empty")
-    if "\n" in name or "\r" in name:
-        raise RTCValidationError("document name must be a single line")
+    validate_nonempty_text(name, field="document name")
+    validate_single_line_text(name, field="document name")
 
 
 def _validate_definition_name(

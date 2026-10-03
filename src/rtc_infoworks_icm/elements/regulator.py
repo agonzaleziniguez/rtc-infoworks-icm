@@ -2,7 +2,11 @@
 
 from dataclasses import dataclass
 
-from rtc_infoworks_icm._validation import validate_finite_number, validate_text
+from rtc_infoworks_icm._validation import (
+    validate_finite_number,
+    validate_nonempty_text,
+    validate_single_line_text,
+)
 from rtc_infoworks_icm.exceptions import RTCValidationError
 
 
@@ -30,13 +34,13 @@ class Regulator:
     override_other_control: bool = False
 
     def __post_init__(self) -> None:
-        validate_text(self.regulator_id, field="regulator ID")
-        if not self.regulator_id.strip():
-            raise RTCValidationError("regulator ID cannot be empty")
-        if any(character in self.regulator_id for character in ('"', "\r", "\n")):
-            raise RTCValidationError(
-                "regulator ID cannot contain double quotes or line breaks"
-            )
+        validate_nonempty_text(self.regulator_id, field="regulator ID")
+        message = "regulator ID cannot contain double quotes or line breaks"
+        validate_single_line_text(
+            self.regulator_id, field="regulator ID", error_message=message
+        )
+        if '"' in self.regulator_id:
+            raise RTCValidationError(message)
         if type(self.override_other_control) is not bool:
             raise RTCValidationError(
                 "regulator override other control must be a boolean"

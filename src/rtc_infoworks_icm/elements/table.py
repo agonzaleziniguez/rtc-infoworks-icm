@@ -9,8 +9,8 @@ from rtc_infoworks_icm._validation import (
     validate_finite_number,
     validate_formatted_number_width,
     validate_identifier,
+    validate_nonempty_text,
     validate_option,
-    validate_text,
 )
 from rtc_infoworks_icm.elements.range import RangeBound, WeeklyTime, compute_repeat_order_key
 from rtc_infoworks_icm.exceptions import RTCValidationError
@@ -65,9 +65,7 @@ class Table:
         measurement = self.output_measurement
         if measurement is None:
             return
-        validate_text(measurement, field="table output measurement")
-        if not measurement.strip():
-            raise RTCValidationError("table output measurement cannot be empty")
+        validate_nonempty_text(measurement, field="table output measurement")
         if len(measurement) > _MAX_MEASUREMENT_LENGTH:
             raise RTCValidationError(
                 "table output measurement cannot exceed "
