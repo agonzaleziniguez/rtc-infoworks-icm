@@ -3,17 +3,15 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
-from rtc_infoworks_icm._validation import validate_identifier
+from rtc_infoworks_icm._validation import validate_identifier, validate_option
 from rtc_infoworks_icm.exceptions import RTCValidationError
-from rtc_infoworks_icm.reference import Reference
+from rtc_infoworks_icm.reference import Reference, validate_reference
 
 _MINIMUM_CONDITIONS = {
     "AND": 2,
     "OR": 2,
     "NOR": 2,
     "NAND": 2,
-    # NOT has no entry: condition_1 is a required field, so it always
-    # satisfies the documented minimum of one condition.
 }
 
 
@@ -39,7 +37,14 @@ class Logic:
     condition_4: Reference | None = None
 
     def __post_init__(self) -> None:
+        validate_option(self.operator, LogicOperator, field="logic operator")
         validate_identifier(self.name, field="logic name")
+        validate_reference(self.condition_1, field="logic condition 1")
+        for position, condition in enumerate(
+            (self.condition_2, self.condition_3, self.condition_4), start=2
+        ):
+            if condition is not None:
+                validate_reference(condition, field=f"logic condition {position}")
         self._validate_conditions_contiguous()
         self._validate_condition_count()
 

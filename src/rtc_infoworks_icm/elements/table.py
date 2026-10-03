@@ -3,15 +3,18 @@
 from dataclasses import dataclass
 from datetime import datetime, time
 from enum import StrEnum
+from typing import TypeIs
 
 from rtc_infoworks_icm._validation import (
     validate_finite_number,
     validate_formatted_number_width,
     validate_identifier,
+    validate_option,
+    validate_text,
 )
 from rtc_infoworks_icm.elements.range import RangeBound, WeeklyTime, compute_repeat_order_key
 from rtc_infoworks_icm.exceptions import RTCValidationError
-from rtc_infoworks_icm.reference import Reference
+from rtc_infoworks_icm.reference import Reference, validate_reference
 
 _MAX_MEASUREMENT_LENGTH = 7
 
@@ -37,7 +40,10 @@ class TableRow:
 
 @dataclass(frozen=True, slots=True)
 class Table:
-    """A lookup that translates a measured input into an output value."""
+    """A lookup that translates a measured input into an output value.
+
+    Rows must be an immutable tuple of validated TableRow instances.
+    """
 
     name: str
     input_range: Reference
@@ -46,7 +52,10 @@ class Table:
     output_measurement: str | None = None
 
     def __post_init__(self) -> None:
+        validate_option(self.type, TableType, field="table type")
         validate_identifier(self.name, field="table name")
+        validate_reference(self.input_range, field="table input range")
+        _validate_rows(self.rows)
         self._validate_output_measurement()
         if not self.rows:
             raise RTCValidationError("table requires at least one row")
@@ -56,6 +65,7 @@ class Table:
         measurement = self.output_measurement
         if measurement is None:
             return
+        validate_text(measurement, field="table output measurement")
         if not measurement.strip():
             raise RTCValidationError("table output measurement cannot be empty")
         if len(measurement) > _MAX_MEASUREMENT_LENGTH:
@@ -63,6 +73,18 @@ class Table:
                 "table output measurement cannot exceed "
                 f"{_MAX_MEASUREMENT_LENGTH} characters"
             )
+
+
+def _validate_rows(value: object) -> None:
+    if not _is_tuple(value):
+        raise RTCValidationError("table rows must be a tuple of TableRow instances")
+    for position, row in enumerate(value, start=1):
+        if not isinstance(row, TableRow):
+            raise RTCValidationError(f"table row {position} must be a TableRow")
+
+
+def _is_tuple(value: object) -> TypeIs[tuple[object, ...]]:
+    return isinstance(value, tuple)
 
 
 def _validate_x(value: RangeBound) -> None:

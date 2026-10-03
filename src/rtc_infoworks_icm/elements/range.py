@@ -8,6 +8,9 @@ from rtc_infoworks_icm._validation import (
     validate_finite_number,
     validate_formatted_number_width,
     validate_identifier,
+    validate_integer,
+    validate_option,
+    validate_text,
 )
 from rtc_infoworks_icm.exceptions import RTCValidationError
 
@@ -27,12 +30,19 @@ class WeeklyTime:
     time: time
 
     def __post_init__(self) -> None:
+        validate_integer(self.weekday, field="weekly time weekday")
+        _validate_weekly_time(self.time)
         if not _MIN_WEEKDAY <= self.weekday <= _MAX_WEEKDAY:
             raise RTCValidationError(
                 f"weekly time weekday must be between {_MIN_WEEKDAY} and {_MAX_WEEKDAY}"
             )
         if self.time.utcoffset() is not None:
             raise RTCValidationError("weekly time must not include a timezone")
+
+
+def _validate_weekly_time(value: object) -> None:
+    if not isinstance(value, time):
+        raise RTCValidationError("weekly time must be a time value")
 
 
 type RangeBound = int | float | datetime | time | WeeklyTime
@@ -114,6 +124,7 @@ class Range:
     distance: int | float = 0.0
 
     def __post_init__(self) -> None:
+        validate_option(self.type, RangeType, field="range type")
         validate_identifier(self.name, field="range name")
         self._validate_distance()
 
@@ -183,7 +194,10 @@ class Range:
         return value
 
     def _validate_numeric_range(self) -> None:
-        if self.location is None or not self.location.strip():
+        if self.location is None:
+            raise RTCValidationError("numeric range location cannot be empty")
+        validate_text(self.location, field="numeric range location")
+        if not self.location.strip():
             raise RTCValidationError("numeric range location cannot be empty")
         if "\n" in self.location or "\r" in self.location or '"' in self.location:
             raise RTCValidationError(
@@ -206,7 +220,7 @@ class Range:
     ) -> int | float | None:
         if value is None:
             return None
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
+        if not isinstance(value, (int, float)):
             raise RTCValidationError(f"numeric range {field} must be a number")
         validate_finite_number(value, field=f"numeric range {field}")
         validate_formatted_number_width(

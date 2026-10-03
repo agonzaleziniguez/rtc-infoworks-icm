@@ -7,9 +7,10 @@ from rtc_infoworks_icm._validation import (
     validate_finite_number,
     validate_identifier,
     validate_integer,
+    validate_option,
 )
 from rtc_infoworks_icm.exceptions import RTCValidationError
-from rtc_infoworks_icm.reference import Reference
+from rtc_infoworks_icm.reference import Reference, validate_reference
 
 _MEASUREMENT_INTERVAL_WIDTH = 5
 
@@ -37,7 +38,10 @@ class Controller:
     differential: int | float = 0.0
 
     def __post_init__(self) -> None:
+        validate_option(self.type, ControllerType, field="controller type")
         validate_identifier(self.name, field="controller name")
+        if self.sensor is not None:
+            validate_reference(self.sensor, field="controller sensor")
         self._validate_measurement_interval()
         self._validate_pid_only_fields()
 

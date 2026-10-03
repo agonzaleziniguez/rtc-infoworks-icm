@@ -7,6 +7,8 @@ from rtc_infoworks_icm._validation import (
     validate_finite_number,
     validate_formatted_number_width,
     validate_identifier,
+    validate_option,
+    validate_text,
 )
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
@@ -41,7 +43,10 @@ class Variable:
     measurement: str | None = None
 
     def __post_init__(self) -> None:
+        validate_option(self.operator, VariableOperator, field="variable operator")
         validate_identifier(self.name, field="variable name")
+        if self.measurement is not None:
+            validate_text(self.measurement, field="variable measurement")
         if self.measurement is not None and not self.measurement.strip():
             raise RTCValidationError("variable measurement cannot be empty")
         if (
@@ -55,6 +60,7 @@ class Variable:
 
         arguments = (self.argument_1, self.argument_2, self.argument_3)
         for position, argument in enumerate(arguments, start=1):
+            _validate_argument_type(argument, position=position)
             if isinstance(argument, (int, float)):
                 validate_finite_number(argument, field=f"variable argument {position}")
                 validate_formatted_number_width(
@@ -93,3 +99,12 @@ class Variable:
                     f"{self.operator.name.lower()} variable does not use "
                     f"argument {position}"
                 )
+
+
+def _validate_argument_type(value: object, *, position: int) -> None:
+    if value is None and position != 1:
+        return
+    if not isinstance(value, (int, float, Reference)):
+        raise RTCValidationError(
+            f"variable argument {position} must be a number or reference"
+        )

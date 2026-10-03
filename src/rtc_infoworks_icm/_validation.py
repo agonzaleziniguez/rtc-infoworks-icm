@@ -1,10 +1,17 @@
 """Validation shared by multiple RTC models."""
 
 import math
+from enum import StrEnum
 
 from rtc_infoworks_icm.exceptions import RTCValidationError
 
 _MAX_IDENTIFIER_LENGTH = 10
+
+
+def validate_option(value: object, enum: type[StrEnum], *, field: str) -> None:
+    """Require a member of the model's enum without coercion."""
+    if not isinstance(value, enum):
+        raise RTCValidationError(f"{field} must be a {enum.__name__} member")
 
 
 def validate_integer(value: object, *, field: str) -> None:
@@ -13,8 +20,16 @@ def validate_integer(value: object, *, field: str) -> None:
         raise RTCValidationError(f"{field} must be an integer")
 
 
-def validate_identifier(value: str, *, field: str) -> None:
+def validate_text(value: object, *, field: str) -> str:
+    """Require text without coercion."""
+    if not isinstance(value, str):
+        raise RTCValidationError(f"{field} must be text")
+    return value
+
+
+def validate_identifier(value: object, *, field: str) -> None:
     """Validate an RTC identifier shared by multiple element types."""
+    value = validate_text(value, field=field)
     if not value.strip():
         raise RTCValidationError(f"{field} cannot be empty")
     if len(value) > _MAX_IDENTIFIER_LENGTH:
@@ -23,9 +38,9 @@ def validate_identifier(value: str, *, field: str) -> None:
         )
 
 
-def validate_finite_number(value: int | float, *, field: str) -> None:
+def validate_finite_number(value: object, *, field: str) -> None:
     """Validate a value is a non-bool finite number."""
-    if isinstance(value, bool):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise RTCValidationError(f"{field} must be a number")
     if isinstance(value, float) and not math.isfinite(value):
         raise RTCValidationError(f"{field} must be finite")

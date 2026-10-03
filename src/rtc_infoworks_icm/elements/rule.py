@@ -6,9 +6,10 @@ from enum import StrEnum
 from rtc_infoworks_icm._validation import (
     validate_finite_number,
     validate_formatted_number_width,
+    validate_option,
 )
 from rtc_infoworks_icm.exceptions import RTCValidationError
-from rtc_infoworks_icm.reference import Reference
+from rtc_infoworks_icm.reference import Reference, validate_reference
 
 _FIXED_VALUE_WIDTH = 8
 _FIXED_VALUE_PRECISION = 4
@@ -37,6 +38,14 @@ class Rule:
     variable_value: Reference | None = None
 
     def __post_init__(self) -> None:
+        validate_option(self.type, RuleType, field="rule type")
+        for label, value in (
+            ("condition", self.condition),
+            ("controller", self.controller),
+            ("variable value", self.variable_value),
+        ):
+            if value is not None:
+                validate_reference(value, field=f"rule {label}")
         self._validate_fixed_value()
         if self.controller is not None and self.type is not RuleType.CONTROL:
             raise RTCValidationError(
