@@ -1,5 +1,6 @@
-from rtc_infoworks_icm import Reference, Variable, VariableOperator
-from rtc_infoworks_icm._serialization import serialize_variable
+from rtc_infoworks_icm._serialization.variable import serialize_variable
+from rtc_infoworks_icm.elements.variable import Variable, VariableOperator
+from rtc_infoworks_icm.reference import Reference
 
 
 def test_serialize_variable() -> None:

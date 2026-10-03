@@ -1,6 +1,8 @@
 import pytest
 
-from rtc_infoworks_icm import Reference, RTCValidationError, Rule, RuleType
+from rtc_infoworks_icm.elements.rule import Rule, RuleType
+from rtc_infoworks_icm.exceptions import RTCValidationError
+from rtc_infoworks_icm.reference import Reference
 
 
 def test_rule_preserves_values() -> None:

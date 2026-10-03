@@ -1,7 +1,7 @@
 import pytest
 
-from rtc_infoworks_icm import Regulator
-from rtc_infoworks_icm._serialization import serialize_regulator
+from rtc_infoworks_icm._serialization.regulator import serialize_regulator
+from rtc_infoworks_icm.elements.regulator import Regulator
 
 
 def test_serialize_regulator_defaults() -> None:

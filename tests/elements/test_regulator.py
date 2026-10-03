@@ -2,7 +2,8 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from rtc_infoworks_icm import Regulator, RTCValidationError
+from rtc_infoworks_icm.elements.regulator import Regulator
+from rtc_infoworks_icm.exceptions import RTCValidationError
 
 
 def test_regulator_defaults_to_blank_values_and_no_override() -> None:

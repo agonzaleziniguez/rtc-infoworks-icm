@@ -1,7 +1,7 @@
 from datetime import datetime, time
 
-from rtc_infoworks_icm import Range, RangeType, WeeklyTime
-from rtc_infoworks_icm._serialization import serialize_range
+from rtc_infoworks_icm._serialization.range import serialize_range
+from rtc_infoworks_icm.elements.range import Range, RangeType, WeeklyTime
 
 
 def test_serialize_numeric_range() -> None:

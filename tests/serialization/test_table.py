@@ -1,7 +1,9 @@
 from datetime import datetime, time
 
-from rtc_infoworks_icm import Reference, Table, TableRow, TableType, WeeklyTime
-from rtc_infoworks_icm._serialization import serialize_table
+from rtc_infoworks_icm._serialization.table import serialize_table
+from rtc_infoworks_icm.elements.range import WeeklyTime
+from rtc_infoworks_icm.elements.table import Table, TableRow, TableType
+from rtc_infoworks_icm.reference import Reference
 
 
 def test_serialize_numeric_table() -> None:

@@ -1,10 +1,10 @@
 import pytest
 
-from rtc_infoworks_icm import RTCValidationError
 from rtc_infoworks_icm._validation import (
     validate_finite_number,
     validate_formatted_number_width,
 )
+from rtc_infoworks_icm.exceptions import RTCValidationError
 
 
 @pytest.mark.parametrize("value", [True, float("nan"), float("inf"), float("-inf")])

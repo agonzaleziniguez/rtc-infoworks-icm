@@ -1,5 +1,6 @@
-from rtc_infoworks_icm import Reference, Rule, RuleType
-from rtc_infoworks_icm._serialization import serialize_rule
+from rtc_infoworks_icm._serialization.rule import serialize_rule
+from rtc_infoworks_icm.elements.rule import Rule, RuleType
+from rtc_infoworks_icm.reference import Reference
 
 
 def test_serialize_position_rule_with_condition() -> None:

@@ -1,6 +1,8 @@
 import pytest
 
-from rtc_infoworks_icm import Controller, ControllerType, Reference, RTCValidationError
+from rtc_infoworks_icm.elements.controller import Controller, ControllerType
+from rtc_infoworks_icm.exceptions import RTCValidationError
+from rtc_infoworks_icm.reference import Reference
 
 
 def test_controller_preserves_values() -> None:

@@ -2,14 +2,10 @@ from datetime import UTC, datetime, time
 
 import pytest
 
-from rtc_infoworks_icm import (
-    Reference,
-    RTCValidationError,
-    Table,
-    TableRow,
-    TableType,
-    WeeklyTime,
-)
+from rtc_infoworks_icm.elements.range import WeeklyTime
+from rtc_infoworks_icm.elements.table import Table, TableRow, TableType
+from rtc_infoworks_icm.exceptions import RTCValidationError
+from rtc_infoworks_icm.reference import Reference
 
 
 def test_table_preserves_numeric_rows() -> None:

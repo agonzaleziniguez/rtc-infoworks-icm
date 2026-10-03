@@ -1,5 +1,6 @@
-from rtc_infoworks_icm import Logic, LogicOperator, Reference
-from rtc_infoworks_icm._serialization import serialize_logic
+from rtc_infoworks_icm._serialization.logic import serialize_logic
+from rtc_infoworks_icm.elements.logic import Logic, LogicOperator
+from rtc_infoworks_icm.reference import Reference
 
 
 def test_serialize_binary_logic() -> None:

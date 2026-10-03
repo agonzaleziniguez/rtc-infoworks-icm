@@ -1,11 +1,8 @@
 import pytest
 
-from rtc_infoworks_icm import (
-    Reference,
-    RTCValidationError,
-    Variable,
-    VariableOperator,
-)
+from rtc_infoworks_icm.elements.variable import Variable, VariableOperator
+from rtc_infoworks_icm.exceptions import RTCValidationError
+from rtc_infoworks_icm.reference import Reference
 
 
 def test_reference_validates_name() -> None:

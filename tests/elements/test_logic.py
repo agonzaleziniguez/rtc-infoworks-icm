@@ -1,6 +1,8 @@
 import pytest
 
-from rtc_infoworks_icm import Logic, LogicOperator, Reference, RTCValidationError
+from rtc_infoworks_icm.elements.logic import Logic, LogicOperator
+from rtc_infoworks_icm.exceptions import RTCValidationError
+from rtc_infoworks_icm.reference import Reference
 
 
 def test_logic_preserves_conditions() -> None:

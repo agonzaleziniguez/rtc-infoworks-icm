@@ -203,6 +203,8 @@ class Range:
             raise RTCValidationError(
                 "numeric range location cannot contain quotes or newlines"
             )
+        if self.type is RangeType.VARIABLE:
+            validate_identifier(self.location, field="reference name")
         if self.type is RangeType.VARIABLE and self.distance != 0:
             raise RTCValidationError("variable range does not use a distance")
 

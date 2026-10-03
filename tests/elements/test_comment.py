@@ -2,7 +2,8 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from rtc_infoworks_icm import Comment, RTCValidationError
+from rtc_infoworks_icm.elements.comment import Comment
+from rtc_infoworks_icm.exceptions import RTCValidationError
 
 
 def test_comment_preserves_valid_text() -> None:

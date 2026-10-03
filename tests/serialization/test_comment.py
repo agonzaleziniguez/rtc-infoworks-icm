@@ -1,5 +1,5 @@
-from rtc_infoworks_icm import Comment
-from rtc_infoworks_icm._serialization import serialize_comment
+from rtc_infoworks_icm._serialization.comment import serialize_comment
+from rtc_infoworks_icm.elements.comment import Comment
 
 
 def test_serialize_comment() -> None:
