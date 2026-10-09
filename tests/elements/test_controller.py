@@ -1,16 +1,18 @@
 import pytest
 
 from rtc_infoworks_icm.elements.controller import Controller, ControllerType
+from rtc_infoworks_icm.elements.range import Range, RangeType
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 
 
 def test_controller_preserves_values() -> None:
+    sensor = Reference(Range("flow", RangeType.FLOW, "node.1"))
     controller = Controller(
         "loop1",
         ControllerType.PID,
         60,
-        sensor=Reference("flow"),
+        sensor=sensor,
         filter_coefficient=0.5,
         proportional=-1.0,
         integral=0.1,
@@ -20,7 +22,7 @@ def test_controller_preserves_values() -> None:
     assert controller.name == "loop1"
     assert controller.type is ControllerType.PID
     assert controller.measurement_interval == 60
-    assert controller.sensor == Reference("flow")
+    assert controller.sensor is sensor
     assert controller.proportional == -1.0
 
 
@@ -53,7 +55,12 @@ def test_controller_rejects_non_integer_measurement_interval() -> None:
 
 def test_controller_rejects_sensor_on_non_pid_type() -> None:
     with pytest.raises(RTCValidationError, match="sensor is only used with PID"):
-        Controller("inc1", ControllerType.INCREMENTAL, 60, sensor=Reference("flow"))
+        Controller(
+            "inc1",
+            ControllerType.INCREMENTAL,
+            60,
+            sensor=Reference(Range("flow", RangeType.LEVEL, "node.1")),
+        )
 
 
 def test_controller_rejects_pid_coefficients_on_non_pid_type() -> None:

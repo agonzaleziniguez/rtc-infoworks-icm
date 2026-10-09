@@ -10,11 +10,16 @@ from rtc_infoworks_icm._serialization.fields import (
     serialize_time_field,
 )
 from rtc_infoworks_icm.elements.range import Range, WeeklyTime
+from rtc_infoworks_icm.reference import Reference
 
 
 def serialize_range(range_: Range) -> str:
     """Serialize a validated RTC range."""
-    location = serialize_location_field(range_.location)
+    location = serialize_location_field(
+        range_.location.name
+        if isinstance(range_.location, Reference)
+        else range_.location
+    )
     minimum = _serialize_bound(range_.minimum)
     maximum = _serialize_bound(range_.maximum)
 

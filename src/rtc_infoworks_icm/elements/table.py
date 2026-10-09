@@ -1,9 +1,11 @@
 """RTC table model."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime, time
 from enum import StrEnum
-from typing import TypeIs
+from typing import TYPE_CHECKING, TypeIs
 
 from rtc_infoworks_icm._validation import (
     validate_finite_number,
@@ -12,9 +14,23 @@ from rtc_infoworks_icm._validation import (
     validate_nonempty_text,
     validate_option,
 )
-from rtc_infoworks_icm.elements.range import RangeBound, WeeklyTime, compute_repeat_order_key
+from rtc_infoworks_icm.elements.range import (
+    Range,
+    RangeBound,
+    WeeklyTime,
+    compute_repeat_order_key,
+)
 from rtc_infoworks_icm.exceptions import RTCValidationError
-from rtc_infoworks_icm.reference import Reference, validate_reference
+from rtc_infoworks_icm.reference import (
+    Reference,
+    ReferenceKind,
+    ReferenceTarget,
+    ValueType,
+    validate_reference,
+)
+
+if TYPE_CHECKING:
+    from rtc_infoworks_icm.elements.variable import Variable
 
 _MAX_MEASUREMENT_LENGTH = 7
 
@@ -38,15 +54,15 @@ class TableRow:
         _validate_y(self.y)
 
 
-@dataclass(frozen=True, slots=True)
-class Table:
+@dataclass(frozen=True, slots=True, eq=False)
+class Table(ReferenceTarget):
     """A lookup that translates a measured input into an output value.
 
     Rows must be an immutable tuple of validated TableRow instances.
     """
 
     name: str
-    input_range: Reference
+    input_range: Reference[Range | Table | Variable]
     type: TableType
     rows: tuple[TableRow, ...]
     output_measurement: str | None = None
@@ -54,12 +70,41 @@ class Table:
     def __post_init__(self) -> None:
         validate_option(self.type, TableType, field="table type")
         validate_identifier(self.name, field="table name")
-        validate_reference(self.input_range, field="table input range")
+        validate_reference(
+            self.input_range,
+            field="table input range",
+            allowed=(ReferenceKind.RANGE, ReferenceKind.TABLE, ReferenceKind.VARIABLE),
+        )
         _validate_rows(self.rows)
         self._validate_output_measurement()
         if not self.rows:
             raise RTCValidationError("table requires at least one row")
         _validate_row_order(self.rows)
+        self._validate_input_type()
+
+    @property
+    def reference_kind(self) -> ReferenceKind:
+        return ReferenceKind.TABLE
+
+    @property
+    def value_type(self) -> ValueType:
+        return ValueType.NUMBER
+
+    def _validate_input_type(self) -> None:
+        value = self.rows[0].x
+        source_type = self.input_range.target.value_type
+        if source_type is ValueType.DATETIME:
+            if not isinstance(value, datetime):
+                raise RTCValidationError(
+                    "table input must be datetime for a time range"
+                )
+        elif source_type is ValueType.REPEATING_TIME:
+            if not isinstance(value, (time, WeeklyTime)):
+                raise RTCValidationError(
+                    "table input must be time or weekly time for a repeating time range"
+                )
+        elif not isinstance(value, (int, float)):
+            raise RTCValidationError("table input must be numeric for a numeric source")
 
     def _validate_output_measurement(self) -> None:
         measurement = self.output_measurement

@@ -1,206 +1,285 @@
-"""Validation of ordered RTC document contents."""
+"""Ordered object membership, scope, and regulator-section validation."""
 
-from collections.abc import Sequence
-from datetime import datetime, time
+from collections.abc import Iterator, Sequence
+from dataclasses import dataclass, field
 
 from rtc_infoworks_icm._validation import validate_nonempty_text, validate_single_line_text
 from rtc_infoworks_icm.elements.comment import Comment
 from rtc_infoworks_icm.elements.controller import Controller
 from rtc_infoworks_icm.elements.logic import Logic
-from rtc_infoworks_icm.elements.range import Range, RangeType, WeeklyTime
+from rtc_infoworks_icm.elements.range import Range
 from rtc_infoworks_icm.elements.regulator import Regulator
 from rtc_infoworks_icm.elements.rule import Rule
 from rtc_infoworks_icm.elements.table import Table
-from rtc_infoworks_icm.elements.variable import Variable
+from rtc_infoworks_icm.elements.variable import Variable, VariableAssignment
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 
-type RTCElement = (
-    Comment | Controller | Logic | Range | Regulator | Rule | Table | Variable
-)
 type ReferenceableElement = Controller | Logic | Range | Table | Variable
+type RTCElement = (
+    Comment
+    | Controller
+    | Logic
+    | Range
+    | Regulator
+    | Rule
+    | Table
+    | Variable
+    | VariableAssignment
+)
 
-_CONDITION_TYPES = (Range, Logic)
-_VALUE_TYPES = (Range, Table, Variable, Logic)
-_SETPOINT_TYPES = (Range, Table, Variable)
-_SENSOR_TYPES = frozenset(
-    {RangeType.FLOW, RangeType.VELOCITY, RangeType.DEPTH, RangeType.LEVEL}
-)
-_DATETIME_TYPES = frozenset({RangeType.TIME, RangeType.LOCAL_CLOCK_TIME})
-_REPEATING_TIME_TYPES = frozenset(
-    {RangeType.TIME_REPEAT, RangeType.LOCAL_CLOCK_TIME_REPEAT}
-)
+
+@dataclass(slots=True)
+class _RegulatorSection:
+    regulator: Regulator
+    referenceable_elements_by_name: dict[str, ReferenceableElement] = field(
+        default_factory=dict
+    )
+    contains_rule: bool = False
+
+
+@dataclass(slots=True)
+class DocumentState:
+    """Validation facts accumulated while reading the ordered document.
+
+    The name-indexed maps contain only elements that can be referenced; comments,
+    assignments, regulators, and rules are validated separately. Global elements
+    remain visible in regulator sections, where local elements may shadow them.
+    """
+
+    global_referenceable_elements_by_name: dict[str, ReferenceableElement] = field(
+        default_factory=dict
+    )
+    declaration_scope_by_element: dict[ReferenceableElement, Regulator | None] = field(
+        default_factory=dict
+    )
+    initialized_variables: set[Variable] = field(default_factory=set)
+    regulator_ids_seen: set[str] = field(default_factory=set)
+    current_section: _RegulatorSection | None = None
+
+    def adding(self, elements: Sequence[RTCElement]) -> DocumentState:
+        """Validate additions on a copy so failure leaves this state unchanged."""
+        candidate = self._copy_for_update()
+        for element in elements:
+            candidate._record_element(element)
+        return candidate
+
+    def _copy_for_update(self) -> DocumentState:
+        current_section = self.current_section
+        if current_section is not None:
+            current_section = _RegulatorSection(
+                regulator=current_section.regulator,
+                referenceable_elements_by_name=(
+                    current_section.referenceable_elements_by_name.copy()
+                ),
+                contains_rule=current_section.contains_rule,
+            )
+
+        return DocumentState(
+            global_referenceable_elements_by_name=(
+                self.global_referenceable_elements_by_name.copy()
+            ),
+            declaration_scope_by_element=self.declaration_scope_by_element.copy(),
+            initialized_variables=self.initialized_variables.copy(),
+            regulator_ids_seen=self.regulator_ids_seen.copy(),
+            current_section=current_section,
+        )
+
+    def _record_element(self, element: RTCElement) -> None:
+        if isinstance(element, Comment):
+            return
+        if isinstance(element, Regulator):
+            self._add_regulator(element)
+        elif isinstance(element, Rule):
+            self._add_rule(element)
+        elif isinstance(element, VariableAssignment):
+            self._add_assignment(element)
+        else:
+            self._add_definition(element)
+
+    def _add_regulator(self, new_regulator: Regulator) -> None:
+        """Validate the current section, then begin the newly declared one."""
+        if new_regulator.regulator_id in self.regulator_ids_seen:
+            raise RTCValidationError(
+                f"duplicate regulator ID {new_regulator.regulator_id!r}"
+            )
+
+        current_section = self.current_section
+        if current_section is not None and not current_section.contains_rule:
+            raise RTCValidationError(
+                f"regulator {current_section.regulator.regulator_id!r} "
+                "requires at least one rule"
+            )
+
+        self.regulator_ids_seen.add(new_regulator.regulator_id)
+        self.current_section = _RegulatorSection(regulator=new_regulator)
+
+    def _add_rule(self, rule: Rule) -> None:
+        if self.current_section is None:
+            raise RTCValidationError("rule must belong to a regulator section")
+        self._validate_references(rule)
+        self.current_section.contains_rule = True
+
+    def _add_definition(self, element: ReferenceableElement) -> None:
+        elements_by_name = self._current_referenceable_elements_by_name()
+        if element.name in elements_by_name:
+            raise RTCValidationError(f"duplicate definition name {element.name!r}")
+        if element in self.declaration_scope_by_element:
+            raise RTCValidationError("element is already registered in this document")
+
+        self._validate_references(element)
+        elements_by_name[element.name] = element
+        declaration_scope = (
+            self.current_section.regulator if self.current_section is not None else None
+        )
+        self.declaration_scope_by_element[element] = declaration_scope
+
+    def _add_assignment(self, assignment: VariableAssignment) -> None:
+        target = assignment.target
+        target_scope = self._require_visible_element(
+            target,
+            field="variable assignment target",
+            initializing_variable=target,
+            undeclared_message="assignment target is not registered in this document",
+        )
+        current_regulator = (
+            self.current_section.regulator if self.current_section is not None else None
+        )
+        if target_scope is not current_regulator:
+            raise RTCValidationError(
+                "Variable updates must belong to their creation scope"
+            )
+
+        self._validate_references(assignment, initializing_variable=target)
+        self.initialized_variables.add(target)
+
+    def _validate_references(
+        self,
+        element: RTCElement,
+        *,
+        initializing_variable: Variable | None = None,
+    ) -> None:
+        for field_name, reference in _references(element):
+            target = reference.target
+            if not isinstance(target, (Controller, Logic, Range, Table, Variable)):
+                raise RTCValidationError(f"{field_name} has an unsupported target")
+            self._require_visible_element(
+                target,
+                field=field_name,
+                initializing_variable=initializing_variable,
+            )
+
+    def _require_visible_element(
+        self,
+        target: ReferenceableElement,
+        *,
+        field: str,
+        initializing_variable: Variable | None,
+        undeclared_message: str | None = None,
+    ) -> Regulator | None:
+        try:
+            declaration_scope = self.declaration_scope_by_element[target]
+        except KeyError:
+            if undeclared_message is not None:
+                raise RTCValidationError(undeclared_message) from None
+            raise RTCValidationError(
+                f"{field} target {target.name!r} is foreign or not yet declared"
+            ) from None
+
+        local = (
+            self.current_section.referenceable_elements_by_name.get(target.name)
+            if self.current_section is not None
+            else None
+        )
+        visible = (
+            local
+            if local is not None
+            else self.global_referenceable_elements_by_name.get(target.name)
+        )
+        if visible is not target:
+            raise RTCValidationError(
+                f"{field} target {target.name!r} is outside "
+                "the current scope or shadowed"
+            )
+
+        if isinstance(target, Variable):
+            if (
+                target is not initializing_variable
+                and target not in self.initialized_variables
+            ):
+                raise RTCValidationError(
+                    f"{field} Variable {target.name!r} requires its first assignment"
+                )
+
+        return declaration_scope
+
+    def _current_referenceable_elements_by_name(
+        self,
+    ) -> dict[str, ReferenceableElement]:
+        if self.current_section is None:
+            return self.global_referenceable_elements_by_name
+        return self.current_section.referenceable_elements_by_name
+
+    def finish(self) -> None:
+        if self.current_section is None:
+            raise RTCValidationError("document requires at least one regulator")
+        if not self.current_section.contains_rule:
+            raise RTCValidationError(
+                f"regulator {self.current_section.regulator.regulator_id!r} "
+                "requires at least one rule"
+            )
+
+    @classmethod
+    def validate(cls, elements: Sequence[RTCElement]) -> None:
+        state = cls()
+        for element in elements:
+            state._record_element(element)
+        state.finish()
 
 
 def validate_document(name: str, elements: Sequence[RTCElement]) -> None:
-    """Validate declarations, references, and regulator sections in file order.
-
-    Names share a namespace within each scope. Only Variable assignments may
-    repeat a name there; other repetitions and cross-type collisions are
-    conservatively rejected. Local names may shadow global names, and separate
-    regulator sections may reuse names.
-    """
+    """Replay incremental rules before the destination is opened."""
     validate_document_name(name)
-
-    global_definitions: dict[str, ReferenceableElement] = {}
-    local_definitions: dict[str, ReferenceableElement] = {}
-    regulator_ids: set[str] = set()
-    regulator: Regulator | None = None
-    rule_count = 0
-
-    for element in elements:
-        if isinstance(element, Comment):
-            continue
-        if isinstance(element, Regulator):
-            if regulator is not None:
-                _require_rules(regulator, rule_count)
-            if element.regulator_id in regulator_ids:
-                raise RTCValidationError(
-                    f"duplicate regulator ID {element.regulator_id!r}"
-                )
-            regulator_ids.add(element.regulator_id)
-            regulator = element
-            local_definitions = {}
-            rule_count = 0
-            continue
-        definitions = global_definitions if regulator is None else local_definitions
-        if isinstance(element, Rule):
-            if regulator is None:
-                raise RTCValidationError("rule must belong to a regulator section")
-            rule_count += 1
-        else:
-            _validate_definition_name(element, definitions)
-
-        _validate_references(element, global_definitions, local_definitions)
-        if not isinstance(element, Rule):
-            definitions[element.name] = element
-
-    if regulator is None:
-        raise RTCValidationError("document requires at least one regulator")
-    _require_rules(regulator, rule_count)
+    DocumentState.validate(elements)
 
 
 def validate_document_name(name: str) -> None:
-    """Validate the document title independently of its contents."""
     validate_nonempty_text(name, field="document name")
     validate_single_line_text(name, field="document name")
 
 
-def _validate_definition_name(
-    element: ReferenceableElement,
-    definitions: dict[str, ReferenceableElement],
-) -> None:
-    existing = definitions.get(element.name)
-    if existing is None:
-        return
-    if isinstance(existing, Variable) and isinstance(element, Variable):
-        return
-    raise RTCValidationError(f"duplicate definition name {element.name!r}")
-
-
-def _require_rules(regulator: Regulator, count: int) -> None:
-    if count == 0:
-        raise RTCValidationError(
-            f"regulator {regulator.regulator_id!r} requires at least one rule"
-        )
-
-
-def _require_reference(
-    reference: Reference,
-    *,
-    field: str,
-    global_definitions: dict[str, ReferenceableElement],
-    local_definitions: dict[str, ReferenceableElement],
-    allowed: tuple[type[ReferenceableElement], ...],
-) -> ReferenceableElement:
-    definition = local_definitions.get(reference.name)
-    if definition is None:
-        definition = global_definitions.get(reference.name)
-    if definition is None:
-        raise RTCValidationError(
-            f"{field} references undefined or not yet declared "
-            f"element {reference.name!r} in the current scope"
-        )
-    if not isinstance(definition, allowed):
-        expected = ", ".join(kind.__name__ for kind in allowed)
-        raise RTCValidationError(
-            f"{field} must reference {expected}, not {type(definition).__name__}"
-        )
-    return definition
-
-
-def _validate_references(
-    element: ReferenceableElement | Rule,
-    global_definitions: dict[str, ReferenceableElement],
-    local_definitions: dict[str, ReferenceableElement],
-) -> None:
-    def require(
-        reference: Reference,
-        field: str,
-        allowed: tuple[type[ReferenceableElement], ...],
-    ) -> ReferenceableElement:
-        return _require_reference(
-            reference,
-            field=field,
-            global_definitions=global_definitions,
-            local_definitions=local_definitions,
-            allowed=allowed,
-        )
-
+def _references(element: RTCElement) -> Iterator[tuple[str, Reference]]:
     if isinstance(element, Range):
-        if element.type is RangeType.VARIABLE and element.location is not None:
-            require(
-                Reference(element.location), "variable range location", _VALUE_TYPES
-            )
+        if isinstance(element.location, Reference):
+            yield "variable range location", element.location
     elif isinstance(element, Logic):
-        for position, condition in enumerate(
-            (
-                element.condition_1,
-                element.condition_2,
-                element.condition_3,
-                element.condition_4,
-            ),
-            start=1,
-        ):
+        conditions = (
+            element.condition_1,
+            element.condition_2,
+            element.condition_3,
+            element.condition_4,
+        )
+        for position, condition in enumerate(conditions, start=1):
             if condition is not None:
-                require(condition, f"logic condition {position}", _CONDITION_TYPES)
+                yield f"logic condition {position}", condition
     elif isinstance(element, Table):
-        source = require(element.input_range, "table input", _SETPOINT_TYPES)
-        _validate_table_input_type(element, source)
-    elif isinstance(element, Variable):
-        for position, argument in enumerate(
-            (element.argument_1, element.argument_2, element.argument_3), start=1
-        ):
+        yield "table input", element.input_range
+    elif isinstance(element, VariableAssignment):
+        arguments = (
+            element.argument_1,
+            element.argument_2,
+            element.argument_3,
+        )
+        for position, argument in enumerate(arguments, start=1):
             if isinstance(argument, Reference):
-                # A variable exists with an initial value of zero, so it may
-                # read its own value even in its first assignment.
-                if argument.name != element.name:
-                    require(argument, f"variable argument {position}", _VALUE_TYPES)
+                yield f"variable argument {position}", argument
     elif isinstance(element, Controller):
         if element.sensor is not None:
-            sensor = require(element.sensor, "controller sensor", (Range,))
-            if isinstance(sensor, Range) and sensor.type not in _SENSOR_TYPES:
-                raise RTCValidationError(
-                    "controller sensor must reference a Q, V, Y, or Z range"
-                )
-    else:
+            yield "controller sensor", element.sensor
+    elif isinstance(element, Rule):
         if element.condition is not None:
-            require(element.condition, "rule condition", _CONDITION_TYPES)
+            yield "rule condition", element.condition
         if element.controller is not None:
-            require(element.controller, "rule controller", (Controller,))
+            yield "rule controller", element.controller
         if element.variable_value is not None:
-            require(element.variable_value, "rule variable value", _SETPOINT_TYPES)
-
-
-def _validate_table_input_type(table: Table, source: ReferenceableElement) -> None:
-    value = table.rows[0].x
-    if isinstance(source, Range) and source.type in _DATETIME_TYPES:
-        if not isinstance(value, datetime):
-            raise RTCValidationError("table input must be datetime for a time range")
-    elif isinstance(source, Range) and source.type in _REPEATING_TIME_TYPES:
-        if not isinstance(value, (time, WeeklyTime)):
-            raise RTCValidationError(
-                "table input must be time or weekly time for a repeating time range"
-            )
-    elif not isinstance(value, (int, float)):
-        raise RTCValidationError("table input must be numeric for a numeric source")
+            yield "rule variable value", element.variable_value

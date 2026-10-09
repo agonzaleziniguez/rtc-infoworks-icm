@@ -1,7 +1,7 @@
 from datetime import datetime, time
 
 from rtc_infoworks_icm._serialization.table import serialize_table
-from rtc_infoworks_icm.elements.range import WeeklyTime
+from rtc_infoworks_icm.elements.range import Range, RangeType, WeeklyTime
 from rtc_infoworks_icm.elements.table import Table, TableRow, TableType
 from rtc_infoworks_icm.reference import Reference
 
@@ -9,7 +9,7 @@ from rtc_infoworks_icm.reference import Reference
 def test_serialize_numeric_table() -> None:
     table = Table(
         "gate",
-        Reference("level"),
+        Reference(Range("level", RangeType.LEVEL, "node.1")),
         TableType.LINEAR,
         (TableRow(0.0, 0.0), TableRow(1.0, 0.5)),
         output_measurement="pos",
@@ -25,7 +25,7 @@ def test_serialize_numeric_table() -> None:
 def test_serialize_datetime_table() -> None:
     table = Table(
         "clock",
-        Reference("time"),
+        Reference(Range("time", RangeType.TIME)),
         TableType.STEP,
         (
             TableRow(datetime(2026, 1, 1, 6, 30), 0.2),
@@ -43,7 +43,7 @@ def test_serialize_datetime_table() -> None:
 def test_serialize_weekly_time_table() -> None:
     table = Table(
         "weekly",
-        Reference("wk"),
+        Reference(Range("wk", RangeType.TIME_REPEAT)),
         TableType.STEP,
         (
             TableRow(WeeklyTime(1, time(6)), 0.2),

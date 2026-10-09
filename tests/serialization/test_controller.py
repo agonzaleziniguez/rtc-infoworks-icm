@@ -1,5 +1,6 @@
 from rtc_infoworks_icm._serialization.controller import serialize_controller
 from rtc_infoworks_icm.elements.controller import Controller, ControllerType
+from rtc_infoworks_icm.elements.range import Range, RangeType
 from rtc_infoworks_icm.reference import Reference
 
 
@@ -18,7 +19,7 @@ def test_serialize_pid_controller_with_sensor_and_coefficients() -> None:
         "pid1",
         ControllerType.PID,
         30,
-        sensor=Reference("flow"),
+        sensor=Reference(Range("flow", RangeType.LEVEL, "node.1")),
         filter_coefficient=0.5,
         proportional=-1.0,
         integral=0.1,

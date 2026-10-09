@@ -4,6 +4,7 @@ import pytest
 
 from rtc_infoworks_icm.elements.range import Range, RangeType, WeeklyTime
 from rtc_infoworks_icm.exceptions import RTCValidationError
+from rtc_infoworks_icm.reference import Reference
 
 
 def test_numeric_range_preserves_values() -> None:
@@ -46,12 +47,17 @@ def test_numeric_range_rejects_reversed_bounds() -> None:
 
 def test_variable_range_rejects_distance() -> None:
     with pytest.raises(RTCValidationError, match="does not use a distance"):
-        Range("value", RangeType.VARIABLE, location="source", distance=1.0)
+        Range(
+            "value",
+            RangeType.VARIABLE,
+            location=Reference(Range("source", RangeType.LEVEL, "node.1")),
+            distance=1.0,
+        )
 
 
-def test_variable_range_validates_reference_name_in_constructor() -> None:
-    with pytest.raises(RTCValidationError, match="reference name cannot exceed"):
-        Range("value", RangeType.VARIABLE, location="long-reference")
+def test_variable_range_rejects_name_only_reference_in_constructor() -> None:
+    with pytest.raises(RTCValidationError, match="location must be a Reference"):
+        Range("value", RangeType.VARIABLE, location="source")
 
 
 def test_network_range_location_is_not_limited_to_reference_name_width() -> None:

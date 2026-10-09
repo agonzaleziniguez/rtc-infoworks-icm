@@ -1,7 +1,10 @@
 """RTC rule model."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from rtc_infoworks_icm._validation import (
     validate_finite_number,
@@ -9,7 +12,14 @@ from rtc_infoworks_icm._validation import (
     validate_option,
 )
 from rtc_infoworks_icm.exceptions import RTCValidationError
-from rtc_infoworks_icm.reference import Reference, validate_reference
+from rtc_infoworks_icm.reference import Reference, ReferenceKind, validate_reference
+
+if TYPE_CHECKING:
+    from rtc_infoworks_icm.elements.controller import Controller
+    from rtc_infoworks_icm.elements.logic import Logic
+    from rtc_infoworks_icm.elements.range import Range
+    from rtc_infoworks_icm.elements.table import Table
+    from rtc_infoworks_icm.elements.variable import Variable
 
 _FIXED_VALUE_WIDTH = 8
 _FIXED_VALUE_PRECISION = 4
@@ -32,20 +42,24 @@ class Rule:
     """A setpoint that takes effect for a regulator while its condition holds."""
 
     type: RuleType
-    condition: Reference | None = None
-    controller: Reference | None = None
+    condition: Reference[Range | Logic] | None = None
+    controller: Reference[Controller] | None = None
     fixed_value: int | float = 0.0
-    variable_value: Reference | None = None
+    variable_value: Reference[Range | Table | Variable] | None = None
 
     def __post_init__(self) -> None:
         validate_option(self.type, RuleType, field="rule type")
-        for label, value in (
-            ("condition", self.condition),
-            ("controller", self.controller),
-            ("variable value", self.variable_value),
+        for label, value, allowed in (
+            ("condition", self.condition, (ReferenceKind.RANGE, ReferenceKind.LOGIC)),
+            ("controller", self.controller, (ReferenceKind.CONTROLLER,)),
+            (
+                "variable value",
+                self.variable_value,
+                (ReferenceKind.RANGE, ReferenceKind.TABLE, ReferenceKind.VARIABLE),
+            ),
         ):
             if value is not None:
-                validate_reference(value, field=f"rule {label}")
+                validate_reference(value, field=f"rule {label}", allowed=allowed)
         self._validate_fixed_value()
         if self.controller is not None and self.type is not RuleType.CONTROL:
             raise RTCValidationError(

@@ -1,19 +1,22 @@
 import pytest
 
+from rtc_infoworks_icm.elements.controller import Controller, ControllerType
+from rtc_infoworks_icm.elements.range import Range, RangeType
 from rtc_infoworks_icm.elements.rule import Rule, RuleType
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 
 
 def test_rule_preserves_values() -> None:
+    condition = Reference(Range("hi_level", RangeType.LEVEL, "node.1"))
     rule = Rule(
         RuleType.POSITION,
-        condition=Reference("hi_level"),
+        condition=condition,
         fixed_value=1.5,
     )
 
     assert rule.type is RuleType.POSITION
-    assert rule.condition == Reference("hi_level")
+    assert rule.condition is condition
     assert rule.fixed_value == 1.5
     assert rule.controller is None
     assert rule.variable_value is None
@@ -39,9 +42,13 @@ def test_rule_rejects_fixed_value_that_does_not_fit() -> None:
 
 def test_rule_rejects_controller_on_non_control_type() -> None:
     with pytest.raises(RTCValidationError, match="only used with control-type"):
-        Rule(RuleType.POSITION, controller=Reference("pid1"))
+        Rule(
+            RuleType.POSITION,
+            controller=Reference(Controller("pid1", ControllerType.INCREMENTAL, 60)),
+        )
 
 
 def test_control_rule_allows_controller() -> None:
-    rule = Rule(RuleType.CONTROL, controller=Reference("pid1"))
-    assert rule.controller == Reference("pid1")
+    controller = Reference(Controller("pid1", ControllerType.INCREMENTAL, 60))
+    rule = Rule(RuleType.CONTROL, controller=controller)
+    assert rule.controller is controller

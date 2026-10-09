@@ -1,12 +1,18 @@
-"""Fluent creation and writing of RTC files."""
+"""Object-based creation and writing of RTC files."""
 
 from collections.abc import Sequence
 from datetime import datetime, time
+from enum import Enum, auto
 from os import PathLike
 from pathlib import Path
-from typing import Self, cast
+from typing import cast, overload
 
-from rtc_infoworks_icm._document import RTCElement, validate_document, validate_document_name
+from rtc_infoworks_icm._document import (
+    DocumentState,
+    RTCElement,
+    validate_document,
+    validate_document_name,
+)
 from rtc_infoworks_icm._serialization.comment import serialize_comment
 from rtc_infoworks_icm._serialization.controller import serialize_controller
 from rtc_infoworks_icm._serialization.document import serialize_header, serialize_terminator
@@ -23,116 +29,157 @@ from rtc_infoworks_icm.elements.range import Range, RangeType, WeeklyTime
 from rtc_infoworks_icm.elements.regulator import Regulator
 from rtc_infoworks_icm.elements.rule import Rule, RuleType
 from rtc_infoworks_icm.elements.table import Table, TableRow, TableType
-from rtc_infoworks_icm.elements.variable import Variable, VariableOperator
+from rtc_infoworks_icm.elements.variable import (
+    Variable,
+    VariableArgument,
+    VariableAssignment,
+    VariableOperator,
+)
 from rtc_infoworks_icm.exceptions import RTCValidationError
-from rtc_infoworks_icm.reference import Reference
+from rtc_infoworks_icm.reference import Reference, ReferenceTarget
+
+type ValueElement = Range | Table | Variable | Logic
+type SetpointElement = Range | Table | Variable
+type ConditionElement = Range | Logic
+type InputArgument = int | float | ValueElement
+type InputBound = int | float | datetime | time | tuple[int, time]
+
+
+class _Missing(Enum):
+    OPERATOR = auto()
 
 
 class RTCCreator:
-    """Collect RTC records in order, finish with end(), and write a UTF-8 file.
+    """Create immutable objects, finish with end(), and write a UTF-8 RTC file.
 
-    Definitions before the first regulator are global. Definitions after it
-    belong to that regulator until the next regulator declaration. References
-    resolve to earlier local definitions first, then global definitions.
-    Repeated variable assignments are allowed within a section.
-    Other same-scope duplicate names, cross-type name collisions, and repeated
-    regulator IDs are rejected. Variables may read their own initial zero value
-    in their first assignment; other references must already be declared.
+    Referenceable methods return their objects, not this creator. Pass those
+    objects as references; names are accepted only for new definitions and
+    network locations. Other methods return None.
 
-    Supply option enums, element references as names, table rows
-    as input/output pairs, and weekly times as (weekday, time) pairs. Invalid
-    inputs raise RTCValidationError. String option codes are not accepted;
-    element models remain internal.
+    Definitions before the first regulator are global. After it they are local
+    to the current regulator. References must be earlier, visible objects from
+    this creator; a local same-name object hides a global one. Same-scope names
+    are unique except for updates to the same Variable identity.
 
-    Model constructors validate field types and element-specific rules.
-    This creator checks pair shapes before construction and validates
-    document relationships before writing.
+    variable(name) reserves an identity without emitting a line. Its first
+    assignment may read itself (initial zero); other records require an earlier
+    assignment. Updates are restricted to its creation scope. Unused identities
+    emit nothing. Failed operations leave the creator unchanged.
     """
 
     def __init__(self, name: str) -> None:
         validate_document_name(name)
         self._name = name
         self._elements: list[RTCElement] = []
+        self._state = DocumentState()
         self._ended = False
 
-    def comment(self, text: str) -> Self:
+    def _append(self, *elements: RTCElement) -> None:
+        state = self._state.adding(elements)
+        self._elements.extend(elements)
+        self._state = state
+
+    def comment(self, text: str) -> None:
         self._require_open()
-        self._elements.append(Comment(text))
-        return self
+        self._append(Comment(text))
+
+    @overload
+    def variable(self, name: str) -> Variable: ...
+
+    @overload
+    def variable(
+        self,
+        name: str | Variable,
+        operator: VariableOperator,
+        argument_1: InputArgument,
+        argument_2: InputArgument | None = None,
+        argument_3: InputArgument | None = None,
+        measurement: str | None = None,
+    ) -> Variable: ...
 
     def variable(
         self,
-        name: str,
-        operator: VariableOperator,
-        argument_1: int | float | str,
-        argument_2: int | float | str | None = None,
-        argument_3: int | float | str | None = None,
+        name: str | Variable,
+        operator: VariableOperator | _Missing = _Missing.OPERATOR,
+        argument_1: InputArgument | None = None,
+        argument_2: InputArgument | None = None,
+        argument_3: InputArgument | None = None,
         measurement: str | None = None,
-    ) -> Self:
-        """Add a variable using a VariableOperator member.
+    ) -> Variable:
+        """Create a Variable or record an operation on an existing identity.
 
-        Numeric arguments are constants; strings are element names, including
-        strings that look like numbers.
+        Arithmetic operands are explicit: variable(total, ADD, total, 1).
+        Measurement describes this assignment record, not a mutable value on
+        the identity. No initialization assignment is generated automatically.
         """
         self._require_open()
-        self._elements.append(
-            Variable(
-                name,
+        creating = isinstance(name, str)
+        target = Variable(name) if creating else name
+        _validate_variable_target(target)
+        if operator is _Missing.OPERATOR:
+            if not creating or any(
+                value is not None
+                for value in (argument_1, argument_2, argument_3, measurement)
+            ):
+                raise RTCValidationError("variable operation requires an operator")
+            self._append(target)
+        else:
+            assignment = VariableAssignment(
+                target,
                 operator,
-                Reference(argument_1) if isinstance(argument_1, str) else argument_1,
-                Reference(argument_2) if isinstance(argument_2, str) else argument_2,
-                Reference(argument_3) if isinstance(argument_3, str) else argument_3,
+                _variable_argument(argument_1),
+                _variable_argument(argument_2) if argument_2 is not None else None,
+                _variable_argument(argument_3) if argument_3 is not None else None,
                 measurement,
             )
-        )
-        return self
+            if creating:
+                self._append(target, assignment)
+            else:
+                self._append(assignment)
+        return target
 
     def range_(
         self,
         name: str,
         type: RangeType,
-        location: str | None = None,
-        minimum: int | float | datetime | time | tuple[int, time] | None = None,
-        maximum: int | float | datetime | time | tuple[int, time] | None = None,
+        location: str | ValueElement | None = None,
+        minimum: InputBound | None = None,
+        maximum: InputBound | None = None,
         distance: int | float = 0.0,
-    ) -> Self:
-        """Add a range using a RangeType member.
+    ) -> Range:
+        """Add a range; VAR locations are objects, network locations are strings.
 
-        T/LCT bounds use datetime, TR/LCTR bounds use time for daily repeats
-        or (weekday, time) for weekly repeats (1=Monday through 7=Sunday).
-        Other range codes use numeric bounds.
+        T/LCT bounds use datetime. TR/LCTR bounds use time or (weekday, time),
+        with weekdays 1=Monday through 7=Sunday.
         """
         self._require_open()
         if isinstance(minimum, tuple):
             _validate_weekly_time_pair(minimum, field="range minimum")
         if isinstance(maximum, tuple):
             _validate_weekly_time_pair(maximum, field="range maximum")
-        self._elements.append(
-            Range(
-                name,
-                type,
-                location,
-                WeeklyTime(*minimum) if isinstance(minimum, tuple) else minimum,
-                WeeklyTime(*maximum) if isinstance(maximum, tuple) else maximum,
-                distance,
-            )
+        element = Range(
+            name,
+            type,
+            Reference(location) if isinstance(location, ReferenceTarget) else location,
+            WeeklyTime(*minimum) if isinstance(minimum, tuple) else minimum,
+            WeeklyTime(*maximum) if isinstance(maximum, tuple) else maximum,
+            distance,
         )
-        return self
+        self._append(element)
+        return element
 
     def table(
         self,
         name: str,
-        input_range: str,
+        input_range: SetpointElement,
         type: TableType,
-        rows: Sequence[
-            tuple[int | float | datetime | time | tuple[int, time], int | float]
-        ],
+        rows: Sequence[tuple[InputBound, int | float]],
         output_measurement: str | None = None,
-    ) -> Self:
-        """Add a table using a TableType member and (input, output) tuples.
+    ) -> Table:
+        """Add a table with a source object and (input, output) row tuples.
 
-        Inputs use the same numeric/date/time forms as range bounds. Outputs
-        are numbers. input_range is the name of a declared input definition.
+        The constructor checks numeric/calendar/repeating-time compatibility.
+        Another Table's output is numeric, even when its own input is temporal.
         """
         self._require_open()
         input_reference = Reference(input_range)
@@ -145,69 +192,57 @@ class RTCCreator:
                 _validate_weekly_time_pair(x, field=f"table row {position} input")
                 x = WeeklyTime(*x)
             table_rows.append(TableRow(x, y))
-        self._elements.append(
-            Table(
-                name,
-                input_reference,
-                type,
-                tuple(table_rows),
-                output_measurement,
-            )
+        element = Table(
+            name, input_reference, type, tuple(table_rows), output_measurement
         )
-        return self
+        self._append(element)
+        return element
 
     def logic(
         self,
         name: str,
         operator: LogicOperator,
-        condition_1: str,
-        condition_2: str | None = None,
-        condition_3: str | None = None,
-        condition_4: str | None = None,
-    ) -> Self:
-        """Add logic using a LogicOperator member and condition names."""
+        condition_1: ConditionElement,
+        condition_2: ConditionElement | None = None,
+        condition_3: ConditionElement | None = None,
+        condition_4: ConditionElement | None = None,
+    ) -> Logic:
         self._require_open()
-        self._elements.append(
-            Logic(
-                name,
-                operator,
-                Reference(condition_1),
-                Reference(condition_2) if condition_2 is not None else None,
-                Reference(condition_3) if condition_3 is not None else None,
-                Reference(condition_4) if condition_4 is not None else None,
-            )
+        element = Logic(
+            name,
+            operator,
+            Reference(condition_1),
+            Reference(condition_2) if condition_2 is not None else None,
+            Reference(condition_3) if condition_3 is not None else None,
+            Reference(condition_4) if condition_4 is not None else None,
         )
-        return self
+        self._append(element)
+        return element
 
     def controller(
         self,
         name: str,
         type: ControllerType,
         measurement_interval: int,
-        sensor: str | None = None,
+        sensor: Range | None = None,
         filter_coefficient: int | float = 0.0,
         proportional: int | float = 0.0,
         integral: int | float = 0.0,
         differential: int | float = 0.0,
-    ) -> Self:
-        """Add a controller using a ControllerType member.
-
-        sensor is the name of a measurement range.
-        """
+    ) -> Controller:
         self._require_open()
-        self._elements.append(
-            Controller(
-                name,
-                type,
-                measurement_interval,
-                Reference(sensor) if sensor is not None else None,
-                filter_coefficient,
-                proportional,
-                integral,
-                differential,
-            )
+        element = Controller(
+            name,
+            type,
+            measurement_interval,
+            Reference(sensor) if sensor is not None else None,
+            filter_coefficient,
+            proportional,
+            integral,
+            differential,
         )
-        return self
+        self._append(element)
+        return element
 
     def regulator(
         self,
@@ -217,9 +252,9 @@ class RTCCreator:
         positive_rate: int | float | None = None,
         negative_rate: int | float | None = None,
         override_other_control: bool = False,
-    ) -> Self:
+    ) -> None:
         self._require_open()
-        self._elements.append(
+        self._append(
             Regulator(
                 regulator_id,
                 initial,
@@ -229,19 +264,17 @@ class RTCCreator:
                 override_other_control,
             )
         )
-        return self
 
     def rule(
         self,
         type: RuleType,
-        condition: str | None = None,
-        controller: str | None = None,
+        condition: ConditionElement | None = None,
+        controller: Controller | None = None,
         fixed_value: int | float = 0.0,
-        variable_value: str | None = None,
-    ) -> Self:
-        """Add a rule using a RuleType member and optional element names."""
+        variable_value: SetpointElement | None = None,
+    ) -> None:
         self._require_open()
-        self._elements.append(
+        self._append(
             Rule(
                 type,
                 Reference(condition) if condition is not None else None,
@@ -250,20 +283,17 @@ class RTCCreator:
                 Reference(variable_value) if variable_value is not None else None,
             )
         )
-        return self
 
-    def end(self) -> Self:
-        """Finish the document; no more records or terminators may be added."""
+    def end(self) -> None:
+        """Close editing; complete-document validation still happens in write()."""
         self._require_open()
         self._ended = True
-        return self
 
     def write(self, path: str | PathLike[str]) -> None:
-        """Validate and write UTF-8 text with LF line endings.
+        """Validate before opening the destination; overwrite with UTF-8/LF text.
 
-        Validation finishes before the destination is opened. Existing files
-        are overwritten on success. Filesystem errors propagate to the caller.
-        A finished document may be written to multiple destinations.
+        A finished document can be written repeatedly. Filesystem errors
+        propagate to the caller.
         """
         if not self._ended:
             raise RTCValidationError(
@@ -280,11 +310,26 @@ class RTCCreator:
             raise RTCValidationError("document has already ended")
 
 
+def _validate_variable_target(value: object) -> None:
+    if not isinstance(value, Variable):
+        raise RTCValidationError("variable target must be a name or Variable object")
+
+
+def _variable_argument(value: InputArgument | None) -> VariableArgument:
+    if isinstance(value, ReferenceTarget):
+        return Reference(value)
+    if value is None:
+        raise RTCValidationError("variable argument 1 must be a number or reference")
+    return value
+
+
 def _serialize_element(element: RTCElement) -> str:
+    if isinstance(element, Variable):
+        return ""
+    if isinstance(element, VariableAssignment):
+        return serialize_variable(element)
     if isinstance(element, Comment):
         return serialize_comment(element)
-    if isinstance(element, Variable):
-        return serialize_variable(element)
     if isinstance(element, Range):
         return serialize_range(element)
     if isinstance(element, Table):

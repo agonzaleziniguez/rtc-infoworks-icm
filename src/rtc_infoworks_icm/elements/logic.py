@@ -1,11 +1,23 @@
 """RTC logic model."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from rtc_infoworks_icm._validation import validate_identifier, validate_option
 from rtc_infoworks_icm.exceptions import RTCValidationError
-from rtc_infoworks_icm.reference import Reference, validate_reference
+from rtc_infoworks_icm.reference import (
+    Reference,
+    ReferenceKind,
+    ReferenceTarget,
+    ValueType,
+    validate_reference,
+)
+
+if TYPE_CHECKING:
+    from rtc_infoworks_icm.elements.range import Range
 
 _MINIMUM_CONDITIONS = {
     "AND": 2,
@@ -25,28 +37,44 @@ class LogicOperator(StrEnum):
     NAND = "NAND"
 
 
-@dataclass(frozen=True, slots=True)
-class Logic:
+@dataclass(frozen=True, slots=True, eq=False)
+class Logic(ReferenceTarget):
     """A TRUE/FALSE result combining up to four ranges or other logic."""
 
     name: str
     operator: LogicOperator
-    condition_1: Reference
-    condition_2: Reference | None = None
-    condition_3: Reference | None = None
-    condition_4: Reference | None = None
+    condition_1: Reference[Range | Logic]
+    condition_2: Reference[Range | Logic] | None = None
+    condition_3: Reference[Range | Logic] | None = None
+    condition_4: Reference[Range | Logic] | None = None
 
     def __post_init__(self) -> None:
         validate_option(self.operator, LogicOperator, field="logic operator")
         validate_identifier(self.name, field="logic name")
-        validate_reference(self.condition_1, field="logic condition 1")
+        validate_reference(
+            self.condition_1,
+            field="logic condition 1",
+            allowed=(ReferenceKind.RANGE, ReferenceKind.LOGIC),
+        )
         for position, condition in enumerate(
             (self.condition_2, self.condition_3, self.condition_4), start=2
         ):
             if condition is not None:
-                validate_reference(condition, field=f"logic condition {position}")
+                validate_reference(
+                    condition,
+                    field=f"logic condition {position}",
+                    allowed=(ReferenceKind.RANGE, ReferenceKind.LOGIC),
+                )
         self._validate_conditions_contiguous()
         self._validate_condition_count()
+
+    @property
+    def reference_kind(self) -> ReferenceKind:
+        return ReferenceKind.LOGIC
+
+    @property
+    def value_type(self) -> ValueType:
+        return ValueType.NUMBER
 
     def _validate_conditions_contiguous(self) -> None:
         conditions = (

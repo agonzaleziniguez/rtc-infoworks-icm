@@ -10,18 +10,33 @@ from rtc_infoworks_icm.elements.range import Range, RangeType, WeeklyTime
 from rtc_infoworks_icm.elements.regulator import Regulator
 from rtc_infoworks_icm.elements.rule import Rule, RuleType
 from rtc_infoworks_icm.elements.table import Table, TableRow, TableType
-from rtc_infoworks_icm.elements.variable import Variable, VariableOperator
+from rtc_infoworks_icm.elements.variable import Variable, VariableAssignment, VariableOperator
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 
 _OPTION_CASES: list[tuple[Callable[[object], object], object]] = [
-    (lambda value: Variable("value", value, 1), VariableOperator.ASSIGN),  # type: ignore[arg-type]
+    (
+        lambda value: VariableAssignment(Variable("value"), value, 1),  # type: ignore[arg-type]
+        VariableOperator.ASSIGN,
+    ),  # type: ignore[arg-type]
     (lambda value: Range("level", value, "node.1"), RangeType.LEVEL),  # type: ignore[arg-type]
     (
-        lambda value: Table("curve", Reference("level"), value, (TableRow(0, 1),)),  # type: ignore[arg-type]
+        lambda value: Table(
+            "curve",
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
+            value,  # type: ignore[arg-type]
+            (TableRow(0, 1),),
+        ),  # type: ignore[arg-type]
         TableType.STEP,
     ),
-    (lambda value: Logic("logic", value, Reference("level")), LogicOperator.NOT),  # type: ignore[arg-type]
+    (
+        lambda value: Logic(
+            "logic",
+            value,  # type: ignore[arg-type]
+            Reference(Range("level", RangeType.LEVEL, "node.1")),  # type: ignore[arg-type]
+        ),
+        LogicOperator.NOT,
+    ),  # type: ignore[arg-type]
     (lambda value: Controller("inc", value, 60), ControllerType.INCREMENTAL),  # type: ignore[arg-type]
     (lambda value: Rule(value), RuleType.POSITION),  # type: ignore[arg-type]
 ]
@@ -44,17 +59,24 @@ def test_models_require_their_own_enum(
 _TEXT_CASES: list[tuple[Callable[[object], object], str]] = [
     (lambda value: Comment(value), "comment text"),  # type: ignore[arg-type]
     (lambda value: Regulator(value), "regulator ID"),  # type: ignore[arg-type]
-    (lambda value: Reference(value), "reference name"),  # type: ignore[arg-type]
-    (lambda value: Variable(value, VariableOperator.ASSIGN, 1), "variable name"),  # type: ignore[arg-type]
+    (
+        lambda value: Variable(value),  # type: ignore[arg-type]
+        "variable name",
+    ),  # type: ignore[arg-type]
     (lambda value: Range("level", RangeType.LEVEL, value), "numeric range location"),  # type: ignore[arg-type]
     (
-        lambda value: Variable("value", VariableOperator.ASSIGN, 1, measurement=value),  # type: ignore[arg-type]
+        lambda value: VariableAssignment(
+            Variable("value"),
+            VariableOperator.ASSIGN,
+            1,
+            measurement=value,  # type: ignore[arg-type]
+        ),  # type: ignore[arg-type]
         "variable measurement",
     ),
     (
         lambda value: Table(
             "curve",
-            Reference("level"),
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
             TableType.STEP,
             (TableRow(0, 1),),
             output_measurement=value,  # type: ignore[arg-type]
@@ -65,7 +87,10 @@ _TEXT_CASES: list[tuple[Callable[[object], object], str]] = [
 
 
 @pytest.mark.parametrize("construct,field", _TEXT_CASES)
-@pytest.mark.parametrize("value", [123, True, [], b"text", Reference("level")])
+@pytest.mark.parametrize(
+    "value",
+    [123, True, [], b"text", Reference(Range("level", RangeType.LEVEL, "node.1"))],
+)
 def test_models_require_text(
     construct: Callable[[object], object], field: str, value: object
 ) -> None:
@@ -79,15 +104,20 @@ _REFERENCE_CASES: list[tuple[Callable[[object], object], str]] = [
         "logic condition 1",
     ),
     (
-        lambda value: Logic("logic", LogicOperator.AND, Reference("one"), value),  # type: ignore[arg-type]
+        lambda value: Logic(
+            "logic",
+            LogicOperator.AND,
+            Reference(Range("one", RangeType.LEVEL, "node.1")),
+            value,  # type: ignore[arg-type]
+        ),  # type: ignore[arg-type]
         "logic condition 2",
     ),
     (
         lambda value: Logic(
             "logic",
             LogicOperator.AND,
-            Reference("one"),
-            Reference("two"),
+            Reference(Range("one", RangeType.LEVEL, "node.1")),
+            Reference(Range("two", RangeType.LEVEL, "node.1")),
             value,  # type: ignore[arg-type]
         ),
         "logic condition 3",
@@ -96,9 +126,9 @@ _REFERENCE_CASES: list[tuple[Callable[[object], object], str]] = [
         lambda value: Logic(
             "logic",
             LogicOperator.AND,
-            Reference("one"),
-            Reference("two"),
-            Reference("three"),
+            Reference(Range("one", RangeType.LEVEL, "node.1")),
+            Reference(Range("two", RangeType.LEVEL, "node.1")),
+            Reference(Range("three", RangeType.LEVEL, "node.1")),
             value,  # type: ignore[arg-type]
         ),
         "logic condition 4",
@@ -152,27 +182,41 @@ def test_table_requires_input_reference() -> None:
 @pytest.mark.parametrize("rows", [None, [], [TableRow(0, 1)], "rows", 123])
 def test_table_requires_immutable_rows(rows: object) -> None:
     with pytest.raises(RTCValidationError, match="rows must be a tuple"):
-        Table("curve", Reference("level"), TableType.STEP, rows)  # type: ignore[arg-type]
+        Table(
+            "curve",
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
+            TableType.STEP,
+            rows,  # type: ignore[arg-type]
+        )  # type: ignore[arg-type]
 
 
-@pytest.mark.parametrize("row", [None, (0, 1), "row", 123, Reference("level")])
+@pytest.mark.parametrize(
+    "row",
+    [None, (0, 1), "row", 123, Reference(Range("level", RangeType.LEVEL, "node.1"))],
+)
 def test_table_requires_typed_rows(row: object) -> None:
     with pytest.raises(RTCValidationError, match="table row 2 must be a TableRow"):
-        Table("curve", Reference("level"), TableType.STEP, (TableRow(0, 1), row))  # type: ignore[arg-type]
+        Table(
+            "curve",
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
+            TableType.STEP,
+            (TableRow(0, 1), row),  # type: ignore[arg-type]
+        )  # type: ignore[arg-type]
 
 
 def test_models_preserve_valid_references_and_rows() -> None:
-    reference = Reference("level")
+    reference = Reference(Range("level", RangeType.LEVEL, "node.1"))
     rows = (TableRow(0, 1),)
     assert Logic("logic", LogicOperator.NOT, reference).condition_1 is reference
     rule = Rule(
         RuleType.CONTROL,
         condition=reference,
-        controller=reference,
+        controller=Reference(Controller("inc", ControllerType.INCREMENTAL, 60)),
         variable_value=reference,
     )
     assert rule.condition is reference
-    assert rule.controller is reference
+    assert rule.controller is not None
+    assert rule.controller.name == "inc"
     assert rule.variable_value is reference
     assert (
         Controller("pid", ControllerType.PID, 60, sensor=reference).sensor is reference
@@ -199,14 +243,14 @@ def test_weekly_time_requires_time(value: object) -> None:
 @pytest.mark.parametrize("value", [None, "value", [], True])
 def test_variable_requires_valid_first_argument(value: object) -> None:
     with pytest.raises(RTCValidationError, match="argument 1 must be"):
-        Variable("value", VariableOperator.ASSIGN, value)  # type: ignore[arg-type]
+        VariableAssignment(Variable("value"), VariableOperator.ASSIGN, value)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("position", [2, 3])
 def test_variable_requires_valid_optional_argument_types(position: int) -> None:
     with pytest.raises(RTCValidationError, match=f"argument {position} must be"):
-        Variable(
-            "value",
+        VariableAssignment(
+            Variable("value"),
             VariableOperator.IF,
             1,
             [] if position == 2 else 2,  # type: ignore[arg-type]

@@ -1,8 +1,11 @@
 """RTC range model."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime, time
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from rtc_infoworks_icm._validation import (
     validate_finite_number,
@@ -14,6 +17,18 @@ from rtc_infoworks_icm._validation import (
     validate_single_line_text,
 )
 from rtc_infoworks_icm.exceptions import RTCValidationError
+from rtc_infoworks_icm.reference import (
+    Reference,
+    ReferenceKind,
+    ReferenceTarget,
+    ValueType,
+    validate_reference,
+)
+
+if TYPE_CHECKING:
+    from rtc_infoworks_icm.elements.logic import Logic
+    from rtc_infoworks_icm.elements.table import Table
+    from rtc_infoworks_icm.elements.variable import Variable
 
 _MIN_WEEKDAY = 1
 _MAX_WEEKDAY = 7
@@ -113,13 +128,13 @@ _REPEATING_TIME_TYPES = frozenset(
 _TIME_TYPES = _DATETIME_TYPES | _REPEATING_TIME_TYPES
 
 
-@dataclass(frozen=True, slots=True)
-class Range:
+@dataclass(frozen=True, slots=True, eq=False)
+class Range(ReferenceTarget):
     """A condition that is true while a measured value is within its bounds."""
 
     name: str
     type: RangeType
-    location: str | None = None
+    location: str | Reference[Range | Table | Variable | Logic] | None = None
     minimum: RangeBound | None = None
     maximum: RangeBound | None = None
     distance: int | float = 0.0
@@ -133,6 +148,18 @@ class Range:
             self._validate_time_range()
         else:
             self._validate_numeric_range()
+
+    @property
+    def reference_kind(self) -> ReferenceKind:
+        return ReferenceKind.RANGE
+
+    @property
+    def value_type(self) -> ValueType:
+        if self.type in _DATETIME_TYPES:
+            return ValueType.DATETIME
+        if self.type in _REPEATING_TIME_TYPES:
+            return ValueType.REPEATING_TIME
+        return ValueType.NUMBER
 
     def _validate_distance(self) -> None:
         validate_finite_number(self.distance, field="range distance")
@@ -197,15 +224,27 @@ class Range:
     def _validate_numeric_range(self) -> None:
         if self.location is None:
             raise RTCValidationError("numeric range location cannot be empty")
-        validate_nonempty_text(self.location, field="numeric range location")
-        message = "numeric range location cannot contain quotes or newlines"
-        validate_single_line_text(
-            self.location, field="numeric range location", error_message=message
-        )
-        if '"' in self.location:
-            raise RTCValidationError(message)
         if self.type is RangeType.VARIABLE:
-            validate_identifier(self.location, field="reference name")
+            validate_reference(
+                self.location,
+                field="variable range location",
+                allowed=(
+                    ReferenceKind.RANGE,
+                    ReferenceKind.TABLE,
+                    ReferenceKind.VARIABLE,
+                    ReferenceKind.LOGIC,
+                ),
+            )
+        else:
+            location = validate_nonempty_text(
+                self.location, field="numeric range location"
+            )
+            message = "numeric range location cannot contain quotes or newlines"
+            validate_single_line_text(
+                location, field="numeric range location", error_message=message
+            )
+            if '"' in location:
+                raise RTCValidationError(message)
         if self.type is RangeType.VARIABLE and self.distance != 0:
             raise RTCValidationError("variable range does not use a distance")
 

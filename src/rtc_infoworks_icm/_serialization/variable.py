@@ -4,11 +4,11 @@ from rtc_infoworks_icm._serialization.fields import (
     serialize_number_field,
     serialize_text_field,
 )
-from rtc_infoworks_icm.elements.variable import Variable, VariableArgument
+from rtc_infoworks_icm.elements.variable import VariableArgument, VariableAssignment
 from rtc_infoworks_icm.reference import Reference
 
 
-def serialize_variable(variable: Variable) -> str:
+def serialize_variable(variable: VariableAssignment) -> str:
     """Serialize a validated RTC variable."""
 
     def serialize_argument(argument: VariableArgument | None) -> str:

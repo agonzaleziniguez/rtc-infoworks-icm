@@ -2,22 +2,23 @@ from datetime import UTC, datetime, time
 
 import pytest
 
-from rtc_infoworks_icm.elements.range import WeeklyTime
+from rtc_infoworks_icm.elements.range import Range, RangeType, WeeklyTime
 from rtc_infoworks_icm.elements.table import Table, TableRow, TableType
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 
 
 def test_table_preserves_numeric_rows() -> None:
+    input_range = Reference(Range("level", RangeType.LEVEL, "node.1"))
     table = Table(
         "gate",
-        Reference("level"),
+        input_range,
         TableType.LINEAR,
         (TableRow(0.0, 0.0), TableRow(1.0, 0.5)),
         output_measurement="pos",
     )
 
-    assert table.input_range == Reference("level")
+    assert table.input_range is input_range
     assert table.rows[1].y == 0.5
     assert table.output_measurement == "pos"
 
@@ -25,14 +26,19 @@ def test_table_preserves_numeric_rows() -> None:
 @pytest.mark.parametrize("name", ["", "   ", "long-table-name"])
 def test_table_rejects_invalid_name(name: str) -> None:
     with pytest.raises(RTCValidationError):
-        Table(name, Reference("level"), TableType.LINEAR, (TableRow(0.0, 0.0),))
+        Table(
+            name,
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
+            TableType.LINEAR,
+            (TableRow(0.0, 0.0),),
+        )
 
 
 def test_table_rejects_invalid_output_measurement() -> None:
     with pytest.raises(RTCValidationError, match="measurement cannot be empty"):
         Table(
             "gate",
-            Reference("level"),
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
             TableType.LINEAR,
             (TableRow(0.0, 0.0),),
             output_measurement="   ",
@@ -40,7 +46,7 @@ def test_table_rejects_invalid_output_measurement() -> None:
     with pytest.raises(RTCValidationError, match="cannot exceed 7 characters"):
         Table(
             "gate",
-            Reference("level"),
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
             TableType.LINEAR,
             (TableRow(0.0, 0.0),),
             output_measurement="distance",
@@ -49,7 +55,12 @@ def test_table_rejects_invalid_output_measurement() -> None:
 
 def test_table_requires_at_least_one_row() -> None:
     with pytest.raises(RTCValidationError, match="at least one row"):
-        Table("gate", Reference("level"), TableType.LINEAR, ())
+        Table(
+            "gate",
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
+            TableType.LINEAR,
+            (),
+        )
 
 
 @pytest.mark.parametrize("x", [True, float("inf"), float("-inf"), float("nan")])
@@ -78,7 +89,7 @@ def test_table_rejects_mixed_input_types() -> None:
     with pytest.raises(RTCValidationError, match="single input type"):
         Table(
             "gate",
-            Reference("level"),
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
             TableType.LINEAR,
             (TableRow(0.0, 0.0), TableRow(time(6), 1.0)),
         )
@@ -88,7 +99,7 @@ def test_table_rejects_non_ascending_rows() -> None:
     with pytest.raises(RTCValidationError, match="ascending input order"):
         Table(
             "gate",
-            Reference("level"),
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
             TableType.LINEAR,
             (TableRow(1.0, 0.0), TableRow(1.0, 1.0)),
         )
@@ -97,7 +108,7 @@ def test_table_rejects_non_ascending_rows() -> None:
 def test_table_accepts_ascending_datetime_rows() -> None:
     table = Table(
         "gate",
-        Reference("clock"),
+        Reference(Range("clock", RangeType.TIME)),
         TableType.STEP,
         (
             TableRow(datetime(2026, 1, 1), 0.0),
@@ -111,7 +122,7 @@ def test_table_accepts_ascending_datetime_rows() -> None:
 def test_table_accepts_ascending_weekly_time_rows() -> None:
     table = Table(
         "gate",
-        Reference("weekly"),
+        Reference(Range("weekly", RangeType.TIME_REPEAT)),
         TableType.STEP,
         (
             TableRow(WeeklyTime(1, time(6)), 0.0),
@@ -126,7 +137,7 @@ def test_table_rejects_mixed_time_and_weekly_time_rows() -> None:
     with pytest.raises(RTCValidationError, match="single input type"):
         Table(
             "gate",
-            Reference("weekly"),
+            Reference(Range("weekly", RangeType.TIME_REPEAT)),
             TableType.STEP,
             (TableRow(time(6), 0.0), TableRow(WeeklyTime(1, time(6)), 1.0)),
         )

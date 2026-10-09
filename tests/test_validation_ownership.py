@@ -11,7 +11,7 @@ from rtc_infoworks_icm.elements.range import Range, RangeType, WeeklyTime
 from rtc_infoworks_icm.elements.regulator import Regulator
 from rtc_infoworks_icm.elements.rule import Rule, RuleType
 from rtc_infoworks_icm.elements.table import Table, TableRow, TableType
-from rtc_infoworks_icm.elements.variable import Variable, VariableOperator
+from rtc_infoworks_icm.elements.variable import Variable, VariableAssignment, VariableOperator
 from rtc_infoworks_icm.reference import Reference
 
 
@@ -21,9 +21,18 @@ def _error_message(action: Callable[[], object]) -> str:
     return str(error.value)
 
 
+def _with_source(action: Callable[[RTCCreator, Range], object]) -> object:
+    rtc = RTCCreator("Control")
+    source = rtc.range_("level", RangeType.LEVEL, "node.1")
+    rtc.regulator("pump.1")
+    return action(rtc, source)
+
+
 @pytest.mark.parametrize("value", [True, float("inf"), float("nan"), 1e20])
 def test_variable_model_owns_numeric_validation(value: float) -> None:
-    direct = _error_message(lambda: Variable("value", VariableOperator.ASSIGN, value))
+    direct = _error_message(
+        lambda: VariableAssignment(Variable("value"), VariableOperator.ASSIGN, value)
+    )
     public = _error_message(
         lambda: RTCCreator("Control").variable("value", VariableOperator.ASSIGN, value)
     )
@@ -47,8 +56,8 @@ def test_range_model_owns_numeric_validation(value: float) -> None:
 def test_table_row_model_owns_output_validation(value: float) -> None:
     direct = _error_message(lambda: TableRow(0, value))
     public = _error_message(
-        lambda: RTCCreator("Control").table(
-            "curve", "level", TableType.STEP, [(0, value)]
+        lambda: _with_source(
+            lambda rtc, source: rtc.table("curve", source, TableType.STEP, [(0, value)])
         )
     )
     assert public == direct
@@ -80,14 +89,14 @@ def test_table_row_model_rejects_non_numeric_output() -> None:
         TableRow(0, "value")  # type: ignore[arg-type]
 
 
-def test_reference_model_owns_identifier_validation() -> None:
-    with pytest.raises(RTCValidationError, match="reference name must be text"):
+def test_reference_model_owns_target_validation() -> None:
+    with pytest.raises(RTCValidationError, match="referenceable object"):
         RTCCreator("Control").rule(RuleType.SWITCH_ON, condition=123)  # type: ignore[arg-type]
 
 
 def test_variable_model_rejects_missing_required_argument() -> None:
     with pytest.raises(RTCValidationError, match="argument 1 must be"):
-        Variable("value", VariableOperator.ASSIGN, None)  # type: ignore[arg-type]
+        VariableAssignment(Variable("value"), VariableOperator.ASSIGN, None)  # type: ignore[arg-type]
 
 
 def test_creator_leverages_variable_model_for_invalid_argument_type() -> None:
@@ -111,7 +120,7 @@ _OPTION_CASES: list[
     tuple[Callable[[object], object], Callable[[object], object], str, str, object]
 ] = [
     (
-        lambda value: Variable("value", value, 1),  # type: ignore[arg-type]
+        lambda value: VariableAssignment(Variable("value"), value, 1),  # type: ignore[arg-type]
         lambda value: RTCCreator("Control").variable("value", value, 1),  # type: ignore[arg-type]
         "operator",
         "=",
@@ -125,15 +134,28 @@ _OPTION_CASES: list[
         RangeType.LEVEL,
     ),
     (
-        lambda value: Table("curve", Reference("level"), value, (TableRow(0, 1),)),  # type: ignore[arg-type]
-        lambda value: RTCCreator("Control").table("curve", "level", value, [(0, 1)]),  # type: ignore[arg-type]
+        lambda value: Table(
+            "curve",
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
+            value,  # type: ignore[arg-type]
+            (TableRow(0, 1),),
+        ),  # type: ignore[arg-type]
+        lambda value: _with_source(
+            lambda rtc, source: rtc.table("curve", source, value, [(0, 1)])  # type: ignore[arg-type]
+        ),  # type: ignore[arg-type]
         "type",
         "STEP",
         TableType.STEP,
     ),
     (
-        lambda value: Logic("high", value, Reference("level")),  # type: ignore[arg-type]
-        lambda value: RTCCreator("Control").logic("high", value, "level"),  # type: ignore[arg-type]
+        lambda value: Logic(
+            "high",
+            value,  # type: ignore[arg-type]
+            Reference(Range("level", RangeType.LEVEL, "node.1")),  # type: ignore[arg-type]
+        ),  # type: ignore[arg-type]
+        lambda value: _with_source(
+            lambda rtc, source: rtc.logic("high", value, source)  # type: ignore[arg-type]
+        ),  # type: ignore[arg-type]
         "operator",
         "NOT",
         LogicOperator.NOT,
@@ -147,7 +169,7 @@ _OPTION_CASES: list[
     ),
     (
         lambda value: Rule(value),  # type: ignore[arg-type]
-        lambda value: RTCCreator("Control").rule(value),  # type: ignore[arg-type]
+        lambda value: _with_source(lambda rtc, source: rtc.rule(value)),  # type: ignore[arg-type]
         "type",
         "POS",
         RuleType.POSITION,
@@ -191,13 +213,25 @@ def test_models_own_option_errors(
 
 def test_enum_options_enforce_model_specific_rules() -> None:
     with pytest.raises(RTCValidationError, match="requires argument 2"):
-        Variable("value", VariableOperator.ADD, 1)
+        VariableAssignment(Variable("value"), VariableOperator.ADD, 1)
     with pytest.raises(RTCValidationError, match="at least 2"):
-        Logic("high", LogicOperator.AND, Reference("level"))
+        Logic(
+            "high",
+            LogicOperator.AND,
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
+        )
     with pytest.raises(RTCValidationError, match="only used with control"):
-        Rule(RuleType.POSITION, controller=Reference("inc"))
+        Rule(
+            RuleType.POSITION,
+            controller=Reference(Controller("inc", ControllerType.INCREMENTAL, 60)),
+        )
     with pytest.raises(RTCValidationError, match="only used with PID"):
-        Controller("inc", ControllerType.INCREMENTAL, 60, sensor=Reference("level"))
+        Controller(
+            "inc",
+            ControllerType.INCREMENTAL,
+            60,
+            sensor=Reference(Range("level", RangeType.LEVEL, "node.1")),
+        )
 
 
 _TEXT_CASES: list[
@@ -219,7 +253,12 @@ _TEXT_CASES: list[
         "numeric range location",
     ),
     (
-        lambda value: Variable("value", VariableOperator.ASSIGN, 1, measurement=value),  # type: ignore[arg-type]
+        lambda value: VariableAssignment(
+            Variable("value"),
+            VariableOperator.ASSIGN,
+            1,
+            measurement=value,  # type: ignore[arg-type]
+        ),  # type: ignore[arg-type]
         lambda value: RTCCreator("Control").variable(
             "value",
             VariableOperator.ASSIGN,
@@ -231,17 +270,19 @@ _TEXT_CASES: list[
     (
         lambda value: Table(
             "curve",
-            Reference("level"),
+            Reference(Range("level", RangeType.LEVEL, "node.1")),
             TableType.STEP,
             (TableRow(0, 1),),
             output_measurement=value,  # type: ignore[arg-type]
         ),
-        lambda value: RTCCreator("Control").table(
-            "curve",
-            "level",
-            TableType.STEP,
-            [(0, 1)],
-            output_measurement=value,  # type: ignore[arg-type]
+        lambda value: _with_source(
+            lambda rtc, source: rtc.table(
+                "curve",
+                source,
+                TableType.STEP,
+                [(0, 1)],
+                output_measurement=value,  # type: ignore[arg-type]
+            )
         ),
         "table output measurement",
     ),
@@ -249,7 +290,10 @@ _TEXT_CASES: list[
 
 
 @pytest.mark.parametrize("direct,public,field", _TEXT_CASES)
-@pytest.mark.parametrize("value", [123, True, [], b"text", Reference("level")])
+@pytest.mark.parametrize(
+    "value",
+    [123, True, [], b"text", Reference(Range("level", RangeType.LEVEL, "node.1"))],
+)
 def test_models_own_text_type_errors(
     direct: Callable[[object], object],
     public: Callable[[object], object],

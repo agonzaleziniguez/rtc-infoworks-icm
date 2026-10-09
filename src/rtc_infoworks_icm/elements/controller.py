@@ -9,8 +9,14 @@ from rtc_infoworks_icm._validation import (
     validate_integer,
     validate_option,
 )
+from rtc_infoworks_icm.elements.range import Range, RangeType
 from rtc_infoworks_icm.exceptions import RTCValidationError
-from rtc_infoworks_icm.reference import Reference, validate_reference
+from rtc_infoworks_icm.reference import (
+    Reference,
+    ReferenceKind,
+    ReferenceTarget,
+    validate_reference,
+)
 
 _MEASUREMENT_INTERVAL_WIDTH = 5
 
@@ -24,14 +30,14 @@ class ControllerType(StrEnum):
     CENTAUR = "CENTAUR"
 
 
-@dataclass(frozen=True, slots=True)
-class Controller:
+@dataclass(frozen=True, slots=True, eq=False)
+class Controller(ReferenceTarget):
     """An indirect control loop that drives a regulator toward a setpoint."""
 
     name: str
     type: ControllerType
     measurement_interval: int
-    sensor: Reference | None = None
+    sensor: Reference[Range] | None = None
     filter_coefficient: int | float = 0.0
     proportional: int | float = 0.0
     integral: int | float = 0.0
@@ -41,9 +47,20 @@ class Controller:
         validate_option(self.type, ControllerType, field="controller type")
         validate_identifier(self.name, field="controller name")
         if self.sensor is not None:
-            validate_reference(self.sensor, field="controller sensor")
+            validate_reference(
+                self.sensor, field="controller sensor", allowed=(ReferenceKind.RANGE,)
+            )
+            _validate_pid_sensor(self.sensor.target)
         self._validate_measurement_interval()
         self._validate_pid_only_fields()
+
+    @property
+    def reference_kind(self) -> ReferenceKind:
+        return ReferenceKind.CONTROLLER
+
+    @property
+    def value_type(self) -> None:
+        return None
 
     def _validate_measurement_interval(self) -> None:
         value = self.measurement_interval
@@ -76,3 +93,15 @@ class Controller:
                 raise RTCValidationError(
                     f"controller {label} is only used with PID type"
                 )
+
+
+def _validate_pid_sensor(value: object) -> None:
+    if not isinstance(value, Range) or value.type not in {
+        RangeType.FLOW,
+        RangeType.VELOCITY,
+        RangeType.DEPTH,
+        RangeType.LEVEL,
+    }:
+        raise RTCValidationError(
+            "controller sensor must reference a Q, V, Y, or Z range"
+        )
