@@ -1,7 +1,11 @@
 import pytest
 
 from rtc_infoworks_icm.elements.range import Range, RangeType
-from rtc_infoworks_icm.elements.variable import Variable, VariableAssignment, VariableOperator
+from rtc_infoworks_icm.elements.variable import (
+    Variable,
+    VariableAssignment,
+    VariableOperator,
+)
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import Reference
 

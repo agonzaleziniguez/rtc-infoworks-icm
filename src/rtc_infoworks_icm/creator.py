@@ -15,7 +15,10 @@ from rtc_infoworks_icm._document import (
 )
 from rtc_infoworks_icm._serialization.comment import serialize_comment
 from rtc_infoworks_icm._serialization.controller import serialize_controller
-from rtc_infoworks_icm._serialization.document import serialize_header, serialize_terminator
+from rtc_infoworks_icm._serialization.document import (
+    serialize_header,
+    serialize_terminator,
+)
 from rtc_infoworks_icm._serialization.logic import serialize_logic
 from rtc_infoworks_icm._serialization.range import serialize_range
 from rtc_infoworks_icm._serialization.regulator import serialize_regulator

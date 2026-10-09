@@ -6,7 +6,12 @@ from rtc_infoworks_icm.elements.logic import Logic, LogicOperator
 from rtc_infoworks_icm.elements.range import Range, RangeType
 from rtc_infoworks_icm.elements.table import Table, TableRow, TableType
 from rtc_infoworks_icm.elements.variable import Variable
-from rtc_infoworks_icm.reference import Reference, ReferenceKind, ReferenceTarget, ValueType
+from rtc_infoworks_icm.reference import (
+    Reference,
+    ReferenceKind,
+    ReferenceTarget,
+    ValueType,
+)
 
 
 def test_reference_target_is_abstract_for_both_contract_properties() -> None:

@@ -3,7 +3,10 @@
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 
-from rtc_infoworks_icm._validation import validate_nonempty_text, validate_single_line_text
+from rtc_infoworks_icm._validation import (
+    validate_nonempty_text,
+    validate_single_line_text,
+)
 from rtc_infoworks_icm.elements.comment import Comment
 from rtc_infoworks_icm.elements.controller import Controller
 from rtc_infoworks_icm.elements.logic import Logic

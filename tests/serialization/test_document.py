@@ -1,4 +1,7 @@
-from rtc_infoworks_icm._serialization.document import serialize_header, serialize_terminator
+from rtc_infoworks_icm._serialization.document import (
+    serialize_header,
+    serialize_terminator,
+)
 
 
 def test_serialize_header() -> None:

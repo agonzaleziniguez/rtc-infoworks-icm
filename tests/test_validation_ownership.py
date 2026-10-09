@@ -11,7 +11,11 @@ from rtc_infoworks_icm.elements.range import Range, RangeType, WeeklyTime
 from rtc_infoworks_icm.elements.regulator import Regulator
 from rtc_infoworks_icm.elements.rule import Rule, RuleType
 from rtc_infoworks_icm.elements.table import Table, TableRow, TableType
-from rtc_infoworks_icm.elements.variable import Variable, VariableAssignment, VariableOperator
+from rtc_infoworks_icm.elements.variable import (
+    Variable,
+    VariableAssignment,
+    VariableOperator,
+)
 from rtc_infoworks_icm.reference import Reference
 
 

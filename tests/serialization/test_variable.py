@@ -1,6 +1,10 @@
 from rtc_infoworks_icm._serialization.variable import serialize_variable
 from rtc_infoworks_icm.elements.range import Range, RangeType
-from rtc_infoworks_icm.elements.variable import Variable, VariableAssignment, VariableOperator
+from rtc_infoworks_icm.elements.variable import (
+    Variable,
+    VariableAssignment,
+    VariableOperator,
+)
 from rtc_infoworks_icm.reference import Reference
 
 
