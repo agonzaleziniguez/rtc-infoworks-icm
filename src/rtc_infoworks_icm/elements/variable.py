@@ -12,6 +12,7 @@ from rtc_infoworks_icm._validation import (
     validate_identifier,
     validate_nonempty_text,
     validate_option,
+    validate_single_line_text,
 )
 from rtc_infoworks_icm.exceptions import RTCValidationError
 from rtc_infoworks_icm.reference import (
@@ -102,6 +103,7 @@ def validate_variable_operation(
     validate_option(operator, VariableOperator, field="variable operator")
     if measurement is not None:
         validate_nonempty_text(measurement, field="variable measurement")
+        validate_single_line_text(measurement, field="variable measurement")
         if len(measurement) > _MAX_MEASUREMENT_LENGTH:
             raise RTCValidationError(
                 "variable measurement cannot exceed "

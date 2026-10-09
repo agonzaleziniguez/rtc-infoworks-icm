@@ -1,3 +1,7 @@
+import os
+import subprocess
+import sys
+import time as system_time
 from datetime import UTC, datetime, time
 
 import pytest
@@ -117,6 +121,83 @@ def test_table_accepts_ascending_datetime_rows() -> None:
     )
 
     assert table.rows[0].x == datetime(2026, 1, 1)
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        (datetime(1, 1, 1), datetime(1, 1, 2)),
+        (
+            datetime(9999, 12, 31, 23, 59, 59, 999998),
+            datetime(9999, 12, 31, 23, 59, 59, 999999),
+        ),
+    ],
+)
+def test_calendar_order_preserves_full_datetime_range_and_precision(
+    first: datetime, second: datetime
+) -> None:
+    source = Reference(Range("clock", RangeType.TIME))
+    table = Table(
+        "curve",
+        source,
+        TableType.STEP,
+        (TableRow(first, 0), TableRow(second, 1)),
+    )
+    assert table.rows[1].x == second
+    for rows in (
+        (TableRow(second, 0), TableRow(first, 1)),
+        (TableRow(first, 0), TableRow(first, 1)),
+    ):
+        with pytest.raises(RTCValidationError, match="ascending input order"):
+            Table("curve", source, TableType.STEP, rows)
+
+
+@pytest.mark.parametrize("timezone", ["UTC0", "EST5EDT,M3.2.0/2,M11.1.0/2"])
+@pytest.mark.skipif(
+    not hasattr(system_time, "tzset"), reason="Host timezone switching requires tzset"
+)
+def test_calendar_order_and_rendering_are_independent_of_host_timezone(
+    timezone: str,
+) -> None:
+    script = """
+import time
+from datetime import datetime
+from rtc_infoworks_icm import RTCCreator, RangeType, RuleType, TableType
+from rtc_infoworks_icm.exceptions import RTCValidationError
+
+time.tzset()
+rtc = RTCCreator("Calendar")
+clock = rtc.range_("clock", RangeType.TIME)
+pairs = [
+    (datetime(2026, 3, 8, 2, 30), datetime(2026, 3, 8, 3)),
+    (datetime(2026, 11, 1, 1, 30, fold=1), datetime(2026, 11, 1, 1, 45)),
+]
+for index, (first, second) in enumerate(pairs):
+    rtc.table(f"curve{index}", clock, TableType.STEP, [(first, 0), (second, 1)])
+    try:
+        rtc.table(f"bad{index}", clock, TableType.STEP, [(second, 0), (first, 1)])
+    except RTCValidationError:
+        pass
+    else:
+        raise AssertionError("Descending wall-clock input accepted")
+rtc.regulator("pump.1")
+rtc.rule(RuleType.POSITION)
+print(rtc.render(), end="")
+"""
+    baseline = subprocess.run(
+        [sys.executable, "-c", script],
+        env={**os.environ, "TZ": "UTC0"},
+        capture_output=True,
+        check=True,
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        env={**os.environ, "TZ": timezone},
+        capture_output=True,
+        check=True,
+    )
+    assert result.stdout == baseline.stdout
+    assert b"TERMINATOR\n" in result.stdout
 
 
 def test_table_accepts_ascending_weekly_time_rows() -> None:

@@ -292,6 +292,27 @@ class RTCCreator:
         self._require_open()
         self._ended = True
 
+    def validate(self) -> None:
+        """Check document completeness without closing editing or writing a file.
+
+        Open and ended documents are accepted. Invalid documents raise
+        RTCValidationError and leave the creator unchanged.
+        """
+        validate_document(self._name, self._elements)
+
+    def render(self) -> str:
+        """Return complete, validated RTC text without closing editing or doing I/O.
+
+        Open and ended documents are accepted. The text uses LF line endings
+        and is suitable for UTF-8 encoding, as used by write().
+        """
+        self.validate()
+        return (
+            serialize_header(self._name)
+            + "".join(_serialize_element(element) for element in self._elements)
+            + serialize_terminator()
+        )
+
     def write(self, path: str | PathLike[str]) -> None:
         """Validate before opening the destination; overwrite with UTF-8/LF text.
 
@@ -302,10 +323,7 @@ class RTCCreator:
             raise RTCValidationError(
                 "document must be finished with end() before write()"
             )
-        validate_document(self._name, self._elements)
-        text = serialize_header(self._name)
-        text += "".join(_serialize_element(element) for element in self._elements)
-        text += serialize_terminator()
+        text = self.render()
         Path(path).write_text(text, encoding="utf-8", newline="\n")
 
     def _require_open(self) -> None:

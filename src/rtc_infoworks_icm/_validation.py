@@ -51,6 +51,7 @@ def validate_single_line_text(
 def validate_identifier(value: object, *, field: str) -> None:
     """Validate an RTC identifier shared by multiple element types."""
     value = validate_nonempty_text(value, field=field)
+    validate_single_line_text(value, field=field)
     if len(value) > _MAX_IDENTIFIER_LENGTH:
         raise RTCValidationError(
             f"{field} cannot exceed {_MAX_IDENTIFIER_LENGTH} characters"

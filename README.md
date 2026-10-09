@@ -60,6 +60,11 @@ the definitions against your network.
 and writes UTF-8 text with LF line endings. It **overwrites an existing file**.
 Parent directories must already exist; finished documents can be written again.
 
+Use `rtc.validate()` to check completeness or `rtc.render()` to preview the
+complete RTC text without writing a file. Neither method closes editing, and
+both work before or after `end()`. Incomplete documents raise
+`RTCValidationError`; `write()` still requires `end()`.
+
 ## Building blocks
 
 | Method | Purpose | Returns |
@@ -73,6 +78,8 @@ Parent directories must already exist; finished documents can be written again.
 | `regulator(regulator_id)` | Start a regulator's section | `None` |
 | `rule(type, ...)` | Add a Rule to the current regulator | `None` |
 | `end()` | Close the document for editing | `None` |
+| `validate()` | Check the complete document without changing it | `None` |
+| `render()` | Validate and return complete RTC text without I/O | `str` |
 | `write(path)` | Validate and write the complete document | `None` |
 
 Use enums from `rtc_infoworks_icm`, such as `RangeType.LEVEL` and `RuleType.POSITION`,
@@ -140,11 +147,17 @@ the source type:
 - `(weekday, datetime.time)` for weekly repeating inputs, with
   `1=Monday` through `7=Sunday`.
 
+Temporal inputs must not include a timezone. Calendar table rows are ordered by
+their wall-clock values, independently of the host timezone.
+
 ## Errors and limitations
 
 Invalid input raises `RTCValidationError`. Additions are checked immediately;
 failed operations leave the creator unchanged. `write()` validates the complete
 document before opening the destination.
+
+RTC identifiers and measurement fields must not contain carriage returns or
+newlines.
 
 `end()` prevents further editing but does not itself check document completeness.
 Filesystem errors from `write()` propagate to the caller.
@@ -166,8 +179,9 @@ uv run ruff format --check .
 uv build --package rtc-infoworks-icm
 ```
 
-The separate [MCP package](packages/rtc-infoworks-icm-mcp/) is a skeleton;
-the core has no MCP dependencies.
+The separate [MCP package](packages/rtc-infoworks-icm-mcp/) is under development;
+its planned objective-first workflow is documented there. No MCP tools are
+implemented yet, and the core has no MCP dependencies.
 
 Report bugs or request features through
 [GitHub Issues](https://github.com/agonzaleziniguez/rtc-infoworks-icm/issues).

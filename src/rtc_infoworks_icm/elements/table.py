@@ -13,6 +13,7 @@ from rtc_infoworks_icm._validation import (
     validate_identifier,
     validate_nonempty_text,
     validate_option,
+    validate_single_line_text,
 )
 from rtc_infoworks_icm.elements.range import (
     Range,
@@ -111,6 +112,7 @@ class Table(ReferenceTarget):
         if measurement is None:
             return
         validate_nonempty_text(measurement, field="table output measurement")
+        validate_single_line_text(measurement, field="table output measurement")
         if len(measurement) > _MAX_MEASUREMENT_LENGTH:
             raise RTCValidationError(
                 "table output measurement cannot exceed "
@@ -156,9 +158,7 @@ def _classify(value: RangeBound) -> str:
     return "number"
 
 
-def _compute_ordering_key(value: RangeBound) -> float:
-    if isinstance(value, datetime):
-        return value.timestamp()
+def _compute_ordering_key(value: int | float | time | WeeklyTime) -> float:
     if isinstance(value, (time, WeeklyTime)):
         return compute_repeat_order_key(value)
     return float(value)
@@ -169,7 +169,13 @@ def _validate_row_order(rows: tuple[TableRow, ...]) -> None:
     for row in rows[1:]:
         if _classify(row.x) != _classify(previous.x):
             raise RTCValidationError("table rows must use a single input type")
-        if _compute_ordering_key(row.x) <= _compute_ordering_key(previous.x):
+        if isinstance(previous.x, datetime) and isinstance(row.x, datetime):
+            ascending = row.x > previous.x
+        elif not isinstance(previous.x, datetime) and not isinstance(row.x, datetime):
+            ascending = _compute_ordering_key(row.x) > _compute_ordering_key(previous.x)
+        else:
+            raise RTCValidationError("table rows must use a single input type")
+        if not ascending:
             raise RTCValidationError(
                 "table rows must be in strictly ascending input order"
             )

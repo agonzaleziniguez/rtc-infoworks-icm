@@ -1,4 +1,5 @@
 from importlib.metadata import distribution
+from importlib.resources import files
 
 import pytest
 from rtc_infoworks_icm_mcp.server import main
@@ -28,3 +29,13 @@ def test_mcp_command_reports_unimplemented_server() -> None:
         SystemExit, match="The rtc-infoworks-icm MCP server is not implemented yet."
     ):
         main()
+
+
+def test_workflow_guide_is_available_as_a_package_resource() -> None:
+    guide = (
+        files("rtc_infoworks_icm_mcp")
+        .joinpath("resources", "workflow.md")
+        .read_text(encoding="utf-8")
+    )
+
+    assert guide.startswith("# From a control objective to an RTC implementation")

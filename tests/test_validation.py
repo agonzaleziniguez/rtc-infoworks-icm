@@ -73,6 +73,12 @@ def test_single_line_text_preserves_custom_error_message() -> None:
 
 
 def test_identifier_keeps_existing_rules() -> None:
-    validate_identifier("a\nb", field="test value")
+    validate_identifier("a b", field="test value")
     with pytest.raises(RTCValidationError, match="cannot exceed 10 characters"):
         validate_identifier("12345678901", field="test value")
+
+
+@pytest.mark.parametrize("value", ["a\nb", "a\rb", "a\r\nb"])
+def test_identifier_rejects_line_breaks(value: str) -> None:
+    with pytest.raises(RTCValidationError, match="^test value must be a single line$"):
+        validate_identifier(value, field="test value")

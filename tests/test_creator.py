@@ -195,6 +195,122 @@ def test_creator_requires_end_before_writing(tmp_path: Path) -> None:
     assert not path.exists()
 
 
+def test_creator_validate_and_render_allow_continued_editing(tmp_path: Path) -> None:
+    rtc = RTCCreator("Contr\u00f4le")
+    rtc.regulator("pump.1")
+    rtc.rule(RuleType.POSITION)
+
+    assert rtc.validate() is None
+    preview = rtc.render()
+    assert rtc.render() == preview
+    assert preview.endswith("TERMINATOR\n")
+    assert "\r" not in preview
+    assert "Contr\u00f4le" in preview
+    rtc.comment("D\u00e9bit")
+    assert rtc.validate() is None
+    updated = rtc.render()
+    assert updated != preview
+
+    path = tmp_path / "control.rtc"
+    with pytest.raises(RTCValidationError, match="finished with end"):
+        rtc.write(path)
+    assert not path.exists()
+    rtc.end()
+    assert rtc.validate() is None
+    assert rtc.render() == updated
+    rtc.write(path)
+    assert path.read_bytes() == updated.encode("utf-8")
+
+
+@pytest.mark.parametrize("method", ["validate", "render"])
+@pytest.mark.parametrize("missing_regulator", [False, True])
+def test_creator_check_failure_leaves_document_editable(
+    method: str, missing_regulator: bool
+) -> None:
+    rtc = RTCCreator("Control")
+    if not missing_regulator:
+        rtc.regulator("pump.1")
+    message = "at least one regulator" if missing_regulator else "at least one rule"
+    with pytest.raises(RTCValidationError, match=message):
+        if method == "validate":
+            rtc.validate()
+        else:
+            rtc.render()
+
+    if missing_regulator:
+        rtc.regulator("pump.1")
+    rtc.rule(RuleType.POSITION)
+    rtc.validate()
+    assert rtc.render().endswith("TERMINATOR\n")
+
+
+def test_creator_validate_and_render_reject_incomplete_ended_document() -> None:
+    rtc = RTCCreator("Control")
+    rtc.regulator("pump.1")
+    rtc.end()
+    with pytest.raises(RTCValidationError, match="at least one rule"):
+        rtc.validate()
+    with pytest.raises(RTCValidationError, match="at least one rule"):
+        rtc.render()
+    with pytest.raises(RTCValidationError, match="already ended"):
+        rtc.rule(RuleType.POSITION)
+
+
+@pytest.mark.parametrize("line_break", ["\n", "\r", "\r\n"])
+@pytest.mark.parametrize(
+    "field",
+    [
+        "document",
+        "comment",
+        "range",
+        "location",
+        "variable",
+        "table",
+        "logic",
+        "controller",
+        "regulator",
+        "table_measurement",
+        "variable_measurement",
+    ],
+)
+def test_creator_rejects_record_breaking_text_without_changing_document(
+    field: str, line_break: str
+) -> None:
+    value = f"a{line_break}b"
+    if field == "document":
+        with pytest.raises(RTCValidationError, match="single line"):
+            RTCCreator(value)
+        return
+
+    rtc = RTCCreator("Control")
+    source = rtc.range_("level", RangeType.LEVEL, "node.1")
+    rtc.regulator("pump.1")
+    rtc.rule(RuleType.POSITION)
+    before = rtc.render()
+    with pytest.raises(RTCValidationError, match="single line|newlines|line breaks"):
+        if field == "comment":
+            rtc.comment(value)
+        elif field == "range":
+            rtc.range_(value, RangeType.LEVEL, "node.1")
+        elif field == "location":
+            rtc.range_("local", RangeType.LEVEL, value)
+        elif field == "variable":
+            rtc.variable(value)
+        elif field == "table":
+            rtc.table(value, source, TableType.STEP, [(0, 1)])
+        elif field == "logic":
+            rtc.logic(value, LogicOperator.NOT, source)
+        elif field == "controller":
+            rtc.controller(value, ControllerType.INCREMENTAL, 60)
+        elif field == "regulator":
+            rtc.regulator(value)
+        elif field == "table_measurement":
+            rtc.table("lookup", source, TableType.STEP, [(0, 1)], value)
+        else:
+            rtc.variable("total", VariableOperator.ASSIGN, 1, measurement=value)
+    assert rtc.render() == before
+
+
 def test_creator_rejects_repeated_end() -> None:
     rtc = RTCCreator("Control")
     rtc.end()
