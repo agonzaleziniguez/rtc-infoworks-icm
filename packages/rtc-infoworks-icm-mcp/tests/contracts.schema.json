@@ -1,0 +1,1856 @@
+{
+  "definition": {
+    "$defs": {
+      "AddComment": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "method": {
+            "const": "comment",
+            "title": "Method",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "text"
+        ],
+        "title": "AddComment",
+        "type": "object"
+      },
+      "AddController": {
+        "additionalProperties": false,
+        "properties": {
+          "differential": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "filter_coefficient": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "integral": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "measurement_interval": {
+            "title": "Measurement Interval",
+            "type": "integer"
+          },
+          "method": {
+            "const": "controller",
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "proportional": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "sensor": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "type": {
+            "$ref": "#/$defs/ControllerType"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "name",
+          "type",
+          "measurement_interval"
+        ],
+        "title": "AddController",
+        "type": "object"
+      },
+      "AddLogic": {
+        "additionalProperties": false,
+        "properties": {
+          "condition_1": {
+            "$ref": "#/$defs/ReferenceInput"
+          },
+          "condition_2": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "condition_3": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "condition_4": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "method": {
+            "const": "logic",
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "operator": {
+            "$ref": "#/$defs/LogicOperator"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "name",
+          "operator",
+          "condition_1"
+        ],
+        "title": "AddLogic",
+        "type": "object"
+      },
+      "AddRange": {
+        "additionalProperties": false,
+        "properties": {
+          "distance": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Location"
+          },
+          "maximum": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/BoundInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "method": {
+            "const": "range_",
+            "title": "Method",
+            "type": "string"
+          },
+          "minimum": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/BoundInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/$defs/RangeType"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "name",
+          "type"
+        ],
+        "title": "AddRange",
+        "type": "object"
+      },
+      "AddRule": {
+        "additionalProperties": false,
+        "properties": {
+          "condition": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "controller": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "fixed_value": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "method": {
+            "const": "rule",
+            "title": "Method",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/$defs/RuleType"
+          },
+          "variable_value": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "type"
+        ],
+        "title": "AddRule",
+        "type": "object"
+      },
+      "AddTable": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "input_range": {
+            "$ref": "#/$defs/ReferenceInput"
+          },
+          "method": {
+            "const": "table",
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "output_measurement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Measurement"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/$defs/TableRowInput"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "type": {
+            "$ref": "#/$defs/TableType"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "name",
+          "input_range",
+          "type",
+          "rows"
+        ],
+        "title": "AddTable",
+        "type": "object"
+      },
+      "ArgumentInput": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/Number"
+          },
+          {
+            "$ref": "#/$defs/ReferenceInput"
+          }
+        ]
+      },
+      "AssignVariable": {
+        "additionalProperties": false,
+        "properties": {
+          "argument_1": {
+            "$ref": "#/$defs/ArgumentInput"
+          },
+          "argument_2": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ArgumentInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "argument_3": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ArgumentInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "measurement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Measurement"
+          },
+          "method": {
+            "const": "assign_variable",
+            "title": "Method",
+            "type": "string"
+          },
+          "operator": {
+            "$ref": "#/$defs/VariableOperator"
+          },
+          "target": {
+            "$ref": "#/$defs/ReferenceInput"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "target",
+          "operator",
+          "argument_1"
+        ],
+        "title": "AssignVariable",
+        "type": "object"
+      },
+      "BeginRegulator": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "initial": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "method": {
+            "const": "regulator",
+            "title": "Method",
+            "type": "string"
+          },
+          "negative_rate": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "override_other_control": {
+            "default": false,
+            "title": "Override Other Control",
+            "type": "boolean"
+          },
+          "positive_rate": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "regulator_id": {
+            "title": "Regulator Id",
+            "type": "string"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "regulator_id"
+        ],
+        "title": "BeginRegulator",
+        "type": "object"
+      },
+      "BoundInput": {
+        "discriminator": {
+          "mapping": {
+            "datetime": "#/$defs/CalendarInput",
+            "number": "#/$defs/NumericInput",
+            "time": "#/$defs/TimeInput",
+            "weekly_time": "#/$defs/WeeklyTimeInput"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/NumericInput"
+          },
+          {
+            "$ref": "#/$defs/CalendarInput"
+          },
+          {
+            "$ref": "#/$defs/TimeInput"
+          },
+          {
+            "$ref": "#/$defs/WeeklyTimeInput"
+          }
+        ]
+      },
+      "CalendarInput": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "datetime",
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "value"
+        ],
+        "title": "CalendarInput",
+        "type": "object"
+      },
+      "ControllerType": {
+        "description": "Supported ways an RTC controller can drive a regulator.",
+        "enum": [
+          "INC",
+          "PID",
+          "FUZZY",
+          "CENTAUR"
+        ],
+        "title": "ControllerType",
+        "type": "string"
+      },
+      "DeclareVariable": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "method": {
+            "const": "declare_variable",
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "name"
+        ],
+        "title": "DeclareVariable",
+        "type": "object"
+      },
+      "Identifier": {
+        "minLength": 1,
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+        "type": "string"
+      },
+      "LogicOperator": {
+        "description": "Supported operators for combining RTC conditions.",
+        "enum": [
+          "AND",
+          "OR",
+          "NOT",
+          "NOR",
+          "NAND"
+        ],
+        "title": "LogicOperator",
+        "type": "string"
+      },
+      "Number": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "NumericInput": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "number",
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "$ref": "#/$defs/Number"
+          }
+        },
+        "required": [
+          "kind",
+          "value"
+        ],
+        "title": "NumericInput",
+        "type": "object"
+      },
+      "Operation": {
+        "discriminator": {
+          "mapping": {
+            "assign_variable": "#/$defs/AssignVariable",
+            "comment": "#/$defs/AddComment",
+            "controller": "#/$defs/AddController",
+            "declare_variable": "#/$defs/DeclareVariable",
+            "logic": "#/$defs/AddLogic",
+            "range_": "#/$defs/AddRange",
+            "regulator": "#/$defs/BeginRegulator",
+            "rule": "#/$defs/AddRule",
+            "table": "#/$defs/AddTable"
+          },
+          "propertyName": "method"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/AddComment"
+          },
+          {
+            "$ref": "#/$defs/AddRange"
+          },
+          {
+            "$ref": "#/$defs/AddTable"
+          },
+          {
+            "$ref": "#/$defs/DeclareVariable"
+          },
+          {
+            "$ref": "#/$defs/AssignVariable"
+          },
+          {
+            "$ref": "#/$defs/AddLogic"
+          },
+          {
+            "$ref": "#/$defs/AddController"
+          },
+          {
+            "$ref": "#/$defs/BeginRegulator"
+          },
+          {
+            "$ref": "#/$defs/AddRule"
+          }
+        ]
+      },
+      "RangeType": {
+        "description": "Supported RTC measurement range types.",
+        "enum": [
+          "Q",
+          "V",
+          "Y",
+          "Z",
+          "R",
+          "RINT",
+          "T",
+          "TR",
+          "LCT",
+          "LCTR",
+          "DQ",
+          "DY",
+          "DZ",
+          "REG",
+          "APC",
+          "PUMP",
+          "VAR",
+          "CSF1",
+          "CSF2",
+          "CNH4D",
+          "CBOD1",
+          "CBOD2",
+          "CBODD",
+          "CBODT",
+          "CCOD1",
+          "CCOD2",
+          "CCODD",
+          "CCODT",
+          "CTKN1",
+          "CTKN2",
+          "CTKND",
+          "CTKNT",
+          "CTPH1",
+          "CTPH2",
+          "CTPHD",
+          "CTPHT",
+          "CPL11",
+          "CPL12",
+          "CPL1D",
+          "CPL1T",
+          "CPL21",
+          "CPL22",
+          "CPL2D",
+          "CPL2T",
+          "CPL31",
+          "CPL32",
+          "CPL3D",
+          "CPL3T",
+          "CPL41",
+          "CPL42",
+          "CPL4D",
+          "CPL4T"
+        ],
+        "title": "RangeType",
+        "type": "string"
+      },
+      "ReferenceInput": {
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/Identifier"
+          }
+        },
+        "required": [
+          "ref"
+        ],
+        "title": "ReferenceInput",
+        "type": "object"
+      },
+      "RuleType": {
+        "description": "Supported ways an RTC rule can control a regulator.",
+        "enum": [
+          "CTRL",
+          "POS",
+          "ON",
+          "OFF"
+        ],
+        "title": "RuleType",
+        "type": "string"
+      },
+      "TableRowInput": {
+        "additionalProperties": false,
+        "properties": {
+          "input": {
+            "$ref": "#/$defs/BoundInput"
+          },
+          "output": {
+            "$ref": "#/$defs/Number"
+          }
+        },
+        "required": [
+          "input",
+          "output"
+        ],
+        "title": "TableRowInput",
+        "type": "object"
+      },
+      "TableType": {
+        "description": "Interpolation types for an RTC table.",
+        "enum": [
+          "LINEAR",
+          "STEP"
+        ],
+        "title": "TableType",
+        "type": "string"
+      },
+      "TimeInput": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "time",
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "kind"
+        ],
+        "title": "TimeInput",
+        "type": "object"
+      },
+      "VariableOperator": {
+        "description": "Supported operations for an RTC variable.",
+        "enum": [
+          "=",
+          "+",
+          "-",
+          "/",
+          "*",
+          "IF",
+          "TIMER"
+        ],
+        "title": "VariableOperator",
+        "type": "string"
+      },
+      "WeeklyTimeInput": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "weekly_time",
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+            "title": "Value",
+            "type": "string"
+          },
+          "weekday": {
+            "maximum": 7,
+            "minimum": 1,
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "value",
+          "kind",
+          "weekday"
+        ],
+        "title": "WeeklyTimeInput",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string"
+      },
+      "operations": {
+        "items": {
+          "$ref": "#/$defs/Operation"
+        },
+        "title": "Operations",
+        "type": "array"
+      }
+    },
+    "required": [
+      "name",
+      "operations"
+    ],
+    "title": "DefinitionInput",
+    "type": "object"
+  },
+  "diagnostic": {
+    "additionalProperties": false,
+    "properties": {
+      "code": {
+        "enum": [
+          "invalid_request",
+          "duplicate_operation_id",
+          "unknown_reference",
+          "wrong_reference_kind",
+          "invalid_document",
+          "incomplete_document"
+        ],
+        "title": "Code",
+        "type": "string"
+      },
+      "field": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Field"
+      },
+      "message": {
+        "title": "Message",
+        "type": "string"
+      },
+      "operation_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Operation Id"
+      },
+      "operation_index": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Operation Index"
+      }
+    },
+    "required": [
+      "code",
+      "message"
+    ],
+    "title": "Diagnostic",
+    "type": "object"
+  },
+  "edits": {
+    "$defs": {
+      "AddComment": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "method": {
+            "const": "comment",
+            "title": "Method",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "text"
+        ],
+        "title": "AddComment",
+        "type": "object"
+      },
+      "AddController": {
+        "additionalProperties": false,
+        "properties": {
+          "differential": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "filter_coefficient": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "integral": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "measurement_interval": {
+            "title": "Measurement Interval",
+            "type": "integer"
+          },
+          "method": {
+            "const": "controller",
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "proportional": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "sensor": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "type": {
+            "$ref": "#/$defs/ControllerType"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "name",
+          "type",
+          "measurement_interval"
+        ],
+        "title": "AddController",
+        "type": "object"
+      },
+      "AddLogic": {
+        "additionalProperties": false,
+        "properties": {
+          "condition_1": {
+            "$ref": "#/$defs/ReferenceInput"
+          },
+          "condition_2": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "condition_3": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "condition_4": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "method": {
+            "const": "logic",
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "operator": {
+            "$ref": "#/$defs/LogicOperator"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "name",
+          "operator",
+          "condition_1"
+        ],
+        "title": "AddLogic",
+        "type": "object"
+      },
+      "AddRange": {
+        "additionalProperties": false,
+        "properties": {
+          "distance": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Location"
+          },
+          "maximum": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/BoundInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "method": {
+            "const": "range_",
+            "title": "Method",
+            "type": "string"
+          },
+          "minimum": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/BoundInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/$defs/RangeType"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "name",
+          "type"
+        ],
+        "title": "AddRange",
+        "type": "object"
+      },
+      "AddRule": {
+        "additionalProperties": false,
+        "properties": {
+          "condition": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "controller": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "fixed_value": {
+            "$ref": "#/$defs/Number",
+            "default": 0.0
+          },
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "method": {
+            "const": "rule",
+            "title": "Method",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/$defs/RuleType"
+          },
+          "variable_value": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ReferenceInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "type"
+        ],
+        "title": "AddRule",
+        "type": "object"
+      },
+      "AddTable": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "input_range": {
+            "$ref": "#/$defs/ReferenceInput"
+          },
+          "method": {
+            "const": "table",
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "output_measurement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Output Measurement"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/$defs/TableRowInput"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "type": {
+            "$ref": "#/$defs/TableType"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "name",
+          "input_range",
+          "type",
+          "rows"
+        ],
+        "title": "AddTable",
+        "type": "object"
+      },
+      "ArgumentInput": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/Number"
+          },
+          {
+            "$ref": "#/$defs/ReferenceInput"
+          }
+        ]
+      },
+      "AssignVariable": {
+        "additionalProperties": false,
+        "properties": {
+          "argument_1": {
+            "$ref": "#/$defs/ArgumentInput"
+          },
+          "argument_2": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ArgumentInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "argument_3": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ArgumentInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "measurement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Measurement"
+          },
+          "method": {
+            "const": "assign_variable",
+            "title": "Method",
+            "type": "string"
+          },
+          "operator": {
+            "$ref": "#/$defs/VariableOperator"
+          },
+          "target": {
+            "$ref": "#/$defs/ReferenceInput"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "target",
+          "operator",
+          "argument_1"
+        ],
+        "title": "AssignVariable",
+        "type": "object"
+      },
+      "BeginRegulator": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "initial": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "method": {
+            "const": "regulator",
+            "title": "Method",
+            "type": "string"
+          },
+          "negative_rate": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "override_other_control": {
+            "default": false,
+            "title": "Override Other Control",
+            "type": "boolean"
+          },
+          "positive_rate": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "regulator_id": {
+            "title": "Regulator Id",
+            "type": "string"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "regulator_id"
+        ],
+        "title": "BeginRegulator",
+        "type": "object"
+      },
+      "BoundInput": {
+        "discriminator": {
+          "mapping": {
+            "datetime": "#/$defs/CalendarInput",
+            "number": "#/$defs/NumericInput",
+            "time": "#/$defs/TimeInput",
+            "weekly_time": "#/$defs/WeeklyTimeInput"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/NumericInput"
+          },
+          {
+            "$ref": "#/$defs/CalendarInput"
+          },
+          {
+            "$ref": "#/$defs/TimeInput"
+          },
+          {
+            "$ref": "#/$defs/WeeklyTimeInput"
+          }
+        ]
+      },
+      "CalendarInput": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "datetime",
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "value"
+        ],
+        "title": "CalendarInput",
+        "type": "object"
+      },
+      "ControllerType": {
+        "description": "Supported ways an RTC controller can drive a regulator.",
+        "enum": [
+          "INC",
+          "PID",
+          "FUZZY",
+          "CENTAUR"
+        ],
+        "title": "ControllerType",
+        "type": "string"
+      },
+      "DeclareVariable": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "method": {
+            "const": "declare_variable",
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "method",
+          "name"
+        ],
+        "title": "DeclareVariable",
+        "type": "object"
+      },
+      "Edit": {
+        "discriminator": {
+          "mapping": {
+            "insert": "#/$defs/InsertEdit",
+            "remove": "#/$defs/RemoveEdit",
+            "replace": "#/$defs/ReplaceEdit"
+          },
+          "propertyName": "action"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/InsertEdit"
+          },
+          {
+            "$ref": "#/$defs/ReplaceEdit"
+          },
+          {
+            "$ref": "#/$defs/RemoveEdit"
+          }
+        ]
+      },
+      "Identifier": {
+        "minLength": 1,
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+        "type": "string"
+      },
+      "InsertEdit": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "insert",
+            "title": "Action",
+            "type": "string"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Identifier"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "operation": {
+            "$ref": "#/$defs/Operation"
+          }
+        },
+        "required": [
+          "action",
+          "operation"
+        ],
+        "title": "InsertEdit",
+        "type": "object"
+      },
+      "LogicOperator": {
+        "description": "Supported operators for combining RTC conditions.",
+        "enum": [
+          "AND",
+          "OR",
+          "NOT",
+          "NOR",
+          "NAND"
+        ],
+        "title": "LogicOperator",
+        "type": "string"
+      },
+      "Number": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "NumericInput": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "number",
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "$ref": "#/$defs/Number"
+          }
+        },
+        "required": [
+          "kind",
+          "value"
+        ],
+        "title": "NumericInput",
+        "type": "object"
+      },
+      "Operation": {
+        "discriminator": {
+          "mapping": {
+            "assign_variable": "#/$defs/AssignVariable",
+            "comment": "#/$defs/AddComment",
+            "controller": "#/$defs/AddController",
+            "declare_variable": "#/$defs/DeclareVariable",
+            "logic": "#/$defs/AddLogic",
+            "range_": "#/$defs/AddRange",
+            "regulator": "#/$defs/BeginRegulator",
+            "rule": "#/$defs/AddRule",
+            "table": "#/$defs/AddTable"
+          },
+          "propertyName": "method"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/AddComment"
+          },
+          {
+            "$ref": "#/$defs/AddRange"
+          },
+          {
+            "$ref": "#/$defs/AddTable"
+          },
+          {
+            "$ref": "#/$defs/DeclareVariable"
+          },
+          {
+            "$ref": "#/$defs/AssignVariable"
+          },
+          {
+            "$ref": "#/$defs/AddLogic"
+          },
+          {
+            "$ref": "#/$defs/AddController"
+          },
+          {
+            "$ref": "#/$defs/BeginRegulator"
+          },
+          {
+            "$ref": "#/$defs/AddRule"
+          }
+        ]
+      },
+      "RangeType": {
+        "description": "Supported RTC measurement range types.",
+        "enum": [
+          "Q",
+          "V",
+          "Y",
+          "Z",
+          "R",
+          "RINT",
+          "T",
+          "TR",
+          "LCT",
+          "LCTR",
+          "DQ",
+          "DY",
+          "DZ",
+          "REG",
+          "APC",
+          "PUMP",
+          "VAR",
+          "CSF1",
+          "CSF2",
+          "CNH4D",
+          "CBOD1",
+          "CBOD2",
+          "CBODD",
+          "CBODT",
+          "CCOD1",
+          "CCOD2",
+          "CCODD",
+          "CCODT",
+          "CTKN1",
+          "CTKN2",
+          "CTKND",
+          "CTKNT",
+          "CTPH1",
+          "CTPH2",
+          "CTPHD",
+          "CTPHT",
+          "CPL11",
+          "CPL12",
+          "CPL1D",
+          "CPL1T",
+          "CPL21",
+          "CPL22",
+          "CPL2D",
+          "CPL2T",
+          "CPL31",
+          "CPL32",
+          "CPL3D",
+          "CPL3T",
+          "CPL41",
+          "CPL42",
+          "CPL4D",
+          "CPL4T"
+        ],
+        "title": "RangeType",
+        "type": "string"
+      },
+      "ReferenceInput": {
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/Identifier"
+          }
+        },
+        "required": [
+          "ref"
+        ],
+        "title": "ReferenceInput",
+        "type": "object"
+      },
+      "RemoveEdit": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "remove",
+            "title": "Action",
+            "type": "string"
+          },
+          "target": {
+            "$ref": "#/$defs/Identifier"
+          }
+        },
+        "required": [
+          "action",
+          "target"
+        ],
+        "title": "RemoveEdit",
+        "type": "object"
+      },
+      "ReplaceEdit": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "replace",
+            "title": "Action",
+            "type": "string"
+          },
+          "operation": {
+            "$ref": "#/$defs/Operation"
+          },
+          "target": {
+            "$ref": "#/$defs/Identifier"
+          }
+        },
+        "required": [
+          "action",
+          "target",
+          "operation"
+        ],
+        "title": "ReplaceEdit",
+        "type": "object"
+      },
+      "RuleType": {
+        "description": "Supported ways an RTC rule can control a regulator.",
+        "enum": [
+          "CTRL",
+          "POS",
+          "ON",
+          "OFF"
+        ],
+        "title": "RuleType",
+        "type": "string"
+      },
+      "TableRowInput": {
+        "additionalProperties": false,
+        "properties": {
+          "input": {
+            "$ref": "#/$defs/BoundInput"
+          },
+          "output": {
+            "$ref": "#/$defs/Number"
+          }
+        },
+        "required": [
+          "input",
+          "output"
+        ],
+        "title": "TableRowInput",
+        "type": "object"
+      },
+      "TableType": {
+        "description": "Interpolation types for an RTC table.",
+        "enum": [
+          "LINEAR",
+          "STEP"
+        ],
+        "title": "TableType",
+        "type": "string"
+      },
+      "TimeInput": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "time",
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "kind"
+        ],
+        "title": "TimeInput",
+        "type": "object"
+      },
+      "VariableOperator": {
+        "description": "Supported operations for an RTC variable.",
+        "enum": [
+          "=",
+          "+",
+          "-",
+          "/",
+          "*",
+          "IF",
+          "TIMER"
+        ],
+        "title": "VariableOperator",
+        "type": "string"
+      },
+      "WeeklyTimeInput": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "weekly_time",
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+            "title": "Value",
+            "type": "string"
+          },
+          "weekday": {
+            "maximum": 7,
+            "minimum": 1,
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "value",
+          "kind",
+          "weekday"
+        ],
+        "title": "WeeklyTimeInput",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "definition_id": {
+        "$ref": "#/$defs/Identifier"
+      },
+      "edits": {
+        "items": {
+          "$ref": "#/$defs/Edit"
+        },
+        "minItems": 1,
+        "title": "Edits",
+        "type": "array"
+      },
+      "expected_revision": {
+        "minimum": 0,
+        "title": "Expected Revision",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "definition_id",
+      "expected_revision",
+      "edits"
+    ],
+    "title": "EditRequest",
+    "type": "object"
+  }
+}

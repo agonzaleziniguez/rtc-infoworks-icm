@@ -15,7 +15,11 @@ def test_mcp_package_identity() -> None:
     package = distribution("rtc-infoworks-icm-mcp")
 
     assert package.metadata["Name"] == "rtc-infoworks-icm-mcp"
-    assert package.requires == ["rtc-infoworks-icm"]
+    assert package.requires == [
+        "mcp>=2.3.0,<3",
+        "pydantic>=2.12.0,<3",
+        "rtc-infoworks-icm",
+    ]
     command = next(
         entry
         for entry in package.entry_points

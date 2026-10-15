@@ -166,6 +166,23 @@ FUZZY and CENTAUR controller-specific settings are not implemented yet.
 The library does not run models, evaluate rules, import existing RTC files, or
 check that network identifiers exist in ICM.
 
+## MCP server (in development)
+
+The planned MCP server will let you describe a real-time control objective to
+an AI assistant without choosing RTC elements yourself. For example:
+
+> Depending on the water level at N1, control variable-crest weir W1 so the
+> level at N2 does not exceed 10 m.
+
+The assistant will ask questions to clarify measurements, operating limits, and
+the desired response, then explain the proposed strategy for your review.
+You will be able to iterate and request a Python script, an RTC file, or both.
+RTC files will always be generated through the library.
+
+**The server is not usable yet.** Its command is a placeholder; setup instructions
+will be added when the server is available. It will not run your model or
+guarantee hydraulic performance: check generated files and behaviour in ICM.
+
 ## Development
 
 Clone the repository, then run:
@@ -179,9 +196,10 @@ uv run ruff format --check .
 uv build --package rtc-infoworks-icm
 ```
 
-The separate [MCP package](packages/rtc-infoworks-icm-mcp/) is under development;
-its planned objective-first workflow is documented there. No MCP tools are
-implemented yet, and the core has no MCP dependencies.
+The separate [MCP package](packages/rtc-infoworks-icm-mcp/) has its own
+dependencies; the core has no MCP dependencies. See the
+[MCP developer contracts](packages/rtc-infoworks-icm-mcp/docs/contracts.md)
+for construction inputs, library mappings, and assistant guidance links.
 
 Report bugs or request features through
 [GitHub Issues](https://github.com/agonzaleziniguez/rtc-infoworks-icm/issues).
